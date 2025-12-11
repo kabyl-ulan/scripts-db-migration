@@ -1,0 +1,131 @@
+{
+  "appName": "project-uniq-name",
+  "mainSiteName": "Кыргыз Республикасынын билим берүү жана илим министрлиги",
+  "undefined": {
+    "label": "Мындай барак табылган жок.",
+    "to": "Өтүңүз",
+    "main": "башкы бет"
+  },
+  "records": {
+    "new": "Жаңы жазуу"
+  },
+  "actions": {
+    "actions": "Actions",
+    "action": "Аракет",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "saving": "Saving...",
+    "print": "Print",
+    "download": "Download",
+    "update": "Edit",
+    "edit": "Edit",
+    "add": "Add",
+    "send": "Send",
+    "delete": "Delete",
+    "deleting": "Deleting",
+    "upload": "Upload",
+    "select": "Select",
+    "refresh": "Refresh",
+    "more": "More",
+    "search": "Search",
+    "back": "Back",
+    "yes": "Yes",
+    "no": "No",
+    "deleteResponsible": "Delete Responsible"
+  },
+  "files": {
+    "onDrop": "Файлды жүктөө үчүн файлды ошол аймакка чыкылдатыңыз же сүйрөңүз"
+  },
+  "signOut": {
+    "title": "Log out of your account",
+    "confirmation": "Do you really want to get out?"
+  },
+  "notify": {
+    "succes": "Ийгилик!",
+    "error": "Ката!",
+    "warning": "Эскертүү!",
+    "succesSaved": "Маалыматтар ийгиликтүү сакталды!",
+    "succesDeleted": "Маалыматтар ийгиликтүү өчүрүлдү",
+    "succesUpload": "ДМаалыматтар ийгиликтүү жүктөлдү!",
+    "full": "Милдеттүү талааларды толтуруңуз",
+    "isNotNumber": "Маанилерде сандар болбошу керек",
+    "isRequired": "милдеттүү талаа!",
+    "wrongLoginOrPassword": "Логин же сырсөз туура эмес!",
+    "externalSignInError": "Үчүнчү жактын кардарынан киргенде бир нерсе туура эмес болуп кетти",
+    "emailErr": "жараксыз электрондук почта дареги!",
+    "pinExist": "Бул ИЖН коду менен колдонуучу бар!",
+    "pinLength": "ИЖН код 14 сандан турушу керек!",
+    "emailExist": "Бул электрондук почта дареги менен колдонуучу бар!",
+    "passWordConfirmError": "Сырсөздөр дал келбейт!",
+    "selectLanguages": "Окуу тилдерин тандаңыз!",
+    "pinCompare": "Сиздин ИЖН колдонуучу ИЖН менен бирдей эмес",
+    "deleteConfirm": "Бул жазууну чын эле жок кылгыңыз келеби?",
+    "notFound": "Табылган жок",
+    "deleteResponsibleConfirm": "Are you sure you want to delete the responsible person?",
+    "onDevelopment": "Иштеп чыгуу жатуу барылдайдо",
+    "onKy": "Кыргызча",
+    "onRu": "Орусча"
+  },
+  "locale": {
+    "language": "Интерфейс тили",
+    "russian": "Русский",
+    "kyrgyz": "Кыргызча",
+    "english": "English"
+  },
+  "bottomLinks": {
+    "settings": "Settings",
+    "logout": "Чыгуу",
+    "manual": "Нускама"
+  },
+  "settings": {
+    "changePhoto": "Changing your profile picture",
+    "changePassword": "Change password",
+    "changePasswordDescription": "The new password must contain at least 6 characters"
+  },
+  "role": {
+    "organization": "Уюм",
+    "employee": "Кызматкер",
+    "supervisor": "Жетекчи",
+    "rayono": "РАЙОНО",
+    "admin": "Администратор",
+    "printing_house": "Басмакана"
+  },
+  "routes": {
+    "home": "Башкы",
+    "main": "Башкы бет",
+    "ministries": "Министрликтер",
+    "organization": "Уюм",
+    "faculty": "Окутуучулар",
+    "direction": "Багыт",
+    "specialty": "Адистик / Профиль",
+    "disciplines": "Сабактар",
+    "employees": "Кызматкерлер",
+    "curriculum": "Окуу планы",
+    "reports": "Отчеттор",
+    "graduates": "Бүтүрүүчүлөр",
+    "grades": "Баалар",
+    "registartion": "Катталуу",
+    "manual": "Нускама",
+    "login": "Кирүү",
+    "settings": "Оңдоолор",
+    "help": "Жардам",
+    "privacyPolicy": "Купуялык саясаты",
+    "forgetPassword": "Сыр сөздү унуттуңузбу?",
+    "logout": "Чыгуу"
+  },
+  "Timer": {
+    "title": "Каттоо аяктаганга чейинки убакыт:",
+    "days": "КҮН",
+    "hours": "СААТ",
+    "minutes": "МИНУТА",
+    "seconds": "СЕКУНДА",
+    "let": "жаш",
+    "god": "жаш",
+    "month": "ай"
+  },
+  "selects": {
+    "year": "Жыл",
+    "gender": "Жын"
+  }
+}

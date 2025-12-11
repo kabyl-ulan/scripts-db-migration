@@ -1,0 +1,14 @@
+{
+  "organization": "Уюм",
+  "table": {
+    "okpo": "ОКПО",
+    "shortName": "Кыска аталышы",
+    "nameKy": "Кыргызча аталышы",
+    "nameRu": "Орусча аталышы",
+    "nameEn": "Англисче аталышы",
+    "latitude": "Кеңдик",
+    "longitude": "Узундук"
+  },
+  "directorCall": "Директор",
+  "employeeCall": "Кызматкер"
+}

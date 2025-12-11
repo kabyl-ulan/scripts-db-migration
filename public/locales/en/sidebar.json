@@ -1,0 +1,28 @@
+{
+  "sideBar": {
+    "personal": "Personal informations",
+    "universities": "Select university",
+    "allUniversities": "All universities",
+    "notifications": "Notifications",
+    "payment": "Payment",
+    "documents": "Documents",
+    "visa": "Visa",
+    "medicalInsurance": "Medical Insurance",
+    "EntryExit": "Entry/Exit",
+    "aboutCountry": "About country",
+    "instruction": "Instruction",
+    "faq": "FAQ",
+    "settings": "Settings",
+    "applicant": "Applicant",
+    "logout": "Logout",
+    "countries": "Countries",
+    "universitiesList": "Universities List",
+    "responsibleUniversities": "Responsible Universities",
+    "applicants": "Applicants",
+    "faculty": "Faculty",
+    "direction": "Direction",
+    "reports": "Reports",
+    "recruitingPlan": "Recruiting Plan",
+    "admissionCommittee": "Admission Committee"
+  }
+}

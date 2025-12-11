@@ -1,0 +1,261 @@
+{
+  "success": "Success",
+  "inValidFormat": "Invalid data format",
+  "hasRelations": "Cannot delete: there are related records",
+  "error": {
+    "unknown": "An unknown error occurred",
+    "internal_server": "Internal server error",
+    "dbConnection": "Database connection error",
+    "validation": "Invalid data",
+    "notFound": "The requested resource was not found",
+    "tooManyRequests": "Too many requests. Please try again later",
+    "tooManyLoginAttempts": "Too many login attempts. Please try again in 15 minutes",
+    "tooManyUploads": "Too many file uploads. Please try again later"
+  },
+  "token": {
+    "token_required": "Token not provided",
+    "permission": "Access denied",
+    "invalid": "Invalid token",
+    "notFound": "Token not found",
+    "expired": "Token has expired",
+    "generateError": "Token generation error",
+    "invalid_token": "Invalid token",
+    "permission_denied": "No permission to access the resource",
+    "unknown_error": "An unknown error occurred while verifying the token"
+  },
+  "auth": {
+    "Required": "Please enter login and password",
+    "login_required": "Please enter login",
+    "password_required": "Please enter password",
+    "role_required": "Please select a role to log in",
+    "role_invalid": "Invalid role, unacceptable value",
+    "invalid_credentials": "Incorrect login or password",
+    "loginFailed": "Login failed"
+  },
+  "logout": {
+    "success": "You have successfully logged out",
+    "failed": "Logout failed"
+  },
+  "register": {
+    "Required": "Please fill in the required fields",
+    "consent_required": "You must confirm agreement to the user terms",
+    "consent_invalid": "Invalid consent value",
+    "token_required": "reCAPTCHA verification required",
+    "token_invalid": "Invalid reCAPTCHA token",
+    "token_captcha_invalid": "reCAPTCHA verification failed. Please try again",
+    "surname_required": "Please enter surname",
+    "names_required": "Please enter first name",
+    "patronymic_invalid": "Invalid patronymic format",
+    "birth_date_required": "Please enter birth date",
+    "birth_date_invalid": "Invalid birth date format",
+    "birth_date_format": "Birth date must be in YYYY-MM-DD format",
+    "id_gender_required": "Please select gender",
+    "id_gender_invalid": "Invalid gender format",
+    "passport_required": "Please enter passport number",
+    "passport_invalid": "Invalid passport format",
+    "passport_date_required": "Please enter passport issue date",
+    "passport_date_invalid": "Invalid passport issue date format",
+    "passport_date_format": "Passport issue date must be in YYYY-MM-DD format",
+    "id_country_required": "Please specify country",
+    "id_country_invalid": "Invalid country format",
+    "email_required": "Please enter email",
+    "email_invalid": "Invalid email format",
+    "code_required": "Please enter verification code",
+    "code_invalid": "Invalid code format",
+    "code_length": "Code must be 6 digits",
+    "password_required": "Please enter password",
+    "password_invalid": "Invalid password format",
+    "password_minLength": "Password must be at least 6 characters",
+    "password_maxLength": "Password is too long",
+    "repeat_password_required": "Please enter repeat password",
+    "repeat_password_invalid": "Invalid repeat password format",
+    "repeat_password_minLength": "Repeat password must be at least 6 characters",
+    "repeat_password_maxLength": "Repeat password is too long",
+    "telephone_required": "Please enter phone number",
+    "telephone_invalid": "Invalid phone number format",
+    "photo_invalid": "File must be an image",
+    "already_registered": "You are already registered",
+    "passport_duplicate": "A user with this passport is already registered",
+    "email_duplicate": "A user with this email is already registered",
+    "save_error": "Failed to save data",
+    "unknown_error": "Unknown error",
+    "success": "You have successfully registered",
+    "password_sent": "Password has been sent to your email"
+  },
+  "email": {
+    "Required": "Please fill in the required fields",
+    "email_required": "Please enter email",
+    "email_invalid": "Invalid email format",
+    "isExistEmailCode": "A verification code has already been sent to this address",
+    "success_send": "Verification code sent successfully",
+    "error_send": "Error sending verification code, please try again",
+    "error": "An error occurred while processing the request",
+    "already_exist": "A user with this email already exists"
+  },
+  "password": {
+    "change": {
+      "success": "Password changed successfully",
+      "wrongOld": "Incorrect current password",
+      "failed": "Failed to change password. Please try again later"
+    }
+  },
+  "application": {
+    "success": "Application submitted successfully",
+    "alreadyRegistered": "You have already applied",
+    "canceled": "Application canceled successfully",
+    "invalidFormat": "Invalid data format",
+    "unknownError": "An unknown error occurred"
+  },
+  "settings": {
+    "notFound": "System settings not found or not configured"
+  },
+  "plan": {
+    "notFound": "Admission plan not found for selected specialty"
+  },
+  "specialty": {
+    "notDelete": "Cannot delete, there are applicants"
+  },
+  "admissionPlan": {
+    "exceeded": "Cannot add or modify the plan as it exceeds the total"
+  },
+  "notDelete": "Cannot delete, record exists",
+  "notFound": "Data not found",
+  "invalidEmailCode": "Invalid code. Please request a new code via email",
+  "errorSendEmail": "Error sending email!",
+  "noValidEmail": "Invalid email address!",
+  "errorGenerateCode": "Error generating code!",
+  "errorVerifyCaptcha": "You did not pass the captcha verification!",
+  "errorExistRecover": "Password reset link has already been used!",
+  "successSave": "Data saved successfully",
+  "errorSave": "Error saving data",
+  "successAdd": "Data added successfully",
+  "errorAdd": "Error adding data",
+  "successUpdate": "Data updated successfully",
+  "errorUpdate": "Error updating data",
+  "errorDelete": "Error deleting data",
+  "successDelete": "Data deleted successfully",
+  "errorDateValid": "Invalid date!",
+  "errorGet": "Error fetching data!",
+  "errorEmailUserNotFound": "User with specified email not found!",
+  "errorUserId": "User not found!",
+  "isTooShort": "New password is too short. Enter at least 6 characters!",
+  "passDoesNotMatch": "New passwords do not match!",
+  "changePassword": "Password changed successfully!",
+  "sendLinkSuccess": "Password reset instructions sent to your email!",
+  "isExistEmailLink": "Recovery link has already been sent!",
+  "emailInCorrect": "Enter a valid email!",
+  "pinExistError": "User with such PIN not found!",
+  "yourEmail": "Your email",
+  "errorStartYear": "Invalid start year!",
+  "errorIdEducation": "Please select education level!",
+  "errorIdFormEducation": "Please select form of education!",
+  "errorOnlyPdfFile": "Upload only PDF files!",
+  "errorFileAdd": "Error saving file!",
+  "errorExistFile": "File not found!",
+  "errorMaxFilesExceeded": "Maximum number of files exceeded: {{maxFiles}}!",
+  "errorDataPassportInCorrect": "Enter passport data correctly!",
+  "errorExistSeries": "This passport series not found!",
+  "errorPinInCorrect": "Enter PIN correctly!",
+  "existUserLang": "You have already selected this language!",
+  "existUserKeySkill": "You have already selected this skill!",
+  "errorYear": "Enter a valid year!",
+  "errorSelectOrg": "Please specify the organization!",
+  "existUserMilitary": "You already have military record!",
+  "olympiad": {
+    "nameInCorrect": "Enter the first name correctly!",
+    "surnameInCorrect": "Enter the surname correctly!",
+    "patronymicInCorrect": "Enter the patronymic correctly!"
+  },
+  "emplyee": {
+    "nameInCorrect": "Enter the first name correctly!",
+    "surnameInCorrect": "Enter the surname correctly!",
+    "patronymicInCorrect": "Enter the patronymic correctly!"
+  },
+  "upload_xml": "Upload XML file!",
+  "uploadCurrectXml": "Upload a valid XML file!",
+  "inValidPin": "Invalid PIN!",
+  "laptopDuplicate": "Laptop already received!",
+  "updateEmail": {
+    "pinError": "Invalid PIN!",
+    "userNotFound": "User not found in the system!",
+    "userNotRegister": "User with this PIN is not registered yet!",
+    "surnameCorrect": "Enter the surname correctly!",
+    "nameCorrect": "Enter the first name correctly!",
+    "patronymicCorrect": "Enter the patronymic correctly!",
+    "patronymicRequired": "Patronymic is required!",
+    "birthDayCorrect": "Enter the birth date correctly!",
+    "emailSame": "New email must not match current email!",
+    "success": "Your email has been successfully updated"
+  },
+  "accessDenied": "Access denied!",
+  "esi": {
+    "invalidRequest": "Insufficient information to log in. Fill in the information and try again.",
+    "authFailedState": "Request expired or data invalid. Please try logging in again.",
+    "tokenFailed": "Access could not be obtained. Please try again later.",
+    "userNotFound": "You are not registered yet. Please register in the \"Mugalim\" system.",
+    "tryError": "An error occurred during login! Please try again!"
+  },
+  "userNotRegister": "User with this PIN is not registered yet!",
+  "existHeadOrganization": "The appointed candidate already holds a manager position in another organization!",
+  "existHeadOldOrganization": "The organization already has a manager appointed (including temporary or acting). Please perform dismissal first!",
+  "passport": {
+    "successSave": "Data saved successfully",
+    "errorSave": "Error saving data!",
+    "notFoundWithPin": "Passport with PIN {{pin}} not found",
+    "notFound": "Passport not found",
+    "serviceUnavailable": "Passport verification service temporarily unavailable. Please try later",
+    "unknownError": "Unknown error occurred. Please try later"
+  },
+  "errorSaveFile": "Error saving file",
+  "uploadFile": "Upload file",
+  "uploadImage": "Upload photo",
+  "errorTestDelete": "Cannot delete test — applications already exist for it",
+  "tour": {
+    "notAdd": "This tour already exists",
+    "notDelete": "Cannot delete, there is a relation"
+  },
+  "avatar": {
+    "notFound": "Avatar not found"
+  },
+  "document": {
+    "notFound": "Document not found"
+  },
+  "university": {
+    "not_found": "University not found or user is not assigned to a university",
+    "duplicate": "University with this name already exists"
+  },
+  "abiturient": {
+    "duplicate": "Abiturient with this passport or email already exists"
+  },
+  "faculty": {
+    "duplicate": "Faculty with this name already exists",
+    "errorAdd": "Error adding faculty",
+    "errorUpdate": "Error updating faculty",
+    "errorDelete": "Error deleting faculty",
+    "operationDenied": "Operation denied",
+    "cannotDeleteLinked": "Cannot delete faculty, there are related records",
+    "noResponse": "No response from database"
+  },
+  "direction": {
+    "not_found": "Directions not found",
+    "duplicate": "Direction with this cipher already exists",
+    "errorAdd": "Error adding direction",
+    "errorUpdate": "Error updating direction",
+    "errorDelete": "Error deleting direction",
+    "operationDenied": "Operation denied",
+    "cannotDeleteLinked": "Cannot delete direction, there are related records"
+  },
+  "country": {
+    "not_found": "Country not found",
+    "duplicate": "Country with this name already exists"
+  },
+  "noFileUploaded": "No file uploaded",
+  "successUpload": "Upload successful",
+  "errorUpload": "Upload error",
+  "cache": {
+    "key_not_found": "Key not found in cache",
+    "deleted": "Key deleted from cache",
+    "pattern_deleted": "Keys deleted by pattern",
+    "flushed": "All cache cleared"
+  }
+}

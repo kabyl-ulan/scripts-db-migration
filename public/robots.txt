@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /project-uniq-name/$
+Allow: /project-uniq-name/login
+
+Sitemap: https://sub-dimain.edu.gov.kg/sitemap.xml

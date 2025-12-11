@@ -1,0 +1,28 @@
+{
+  "sideBar": {
+    "personal": "Персональные данные",
+    "universities": "Выбрать ВУЗ",
+    "allUniversities": "Все университеты",
+    "notifications": "Уведомления",
+    "payment": "Оплата",
+    "documents": "Документы",
+    "visa": "Виза",
+    "medicalInsurance": "Медстраховка",
+    "EntryExit": "Въезд/выезд",
+    "aboutCountry": "О стране",
+    "instruction": "Инструкция",
+    "faq": "Часто задаваемые вопросы",
+    "settings": "Настройки",
+    "applicant": "Абитуриент",
+    "logout": "Выход",
+    "countries": "Страны",
+    "universitiesList": "Список вузов",
+    "responsibleUniversities": "Ответственные вузов",
+    "applicants": "Абитуриенты",
+    "faculty": "Факультет",
+    "direction": "Направление",
+    "reports": "Отчеты",
+    "recruitingPlan": "План набора",
+    "admissionCommittee": "Приемная комиссия"
+  }
+}
