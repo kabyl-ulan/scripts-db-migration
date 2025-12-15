@@ -140,7 +140,6 @@ npx ts-node src/tools/db-migrate/cli.ts migrate -d -t development
 ├── dist/                          # Compiled TypeScript output
 ├── sql/                           # Database stored procedures
 └── src/                           # Source code
-    ├── abiturient/                # Applicant-related functionality
     ├── auth/                      # Authentication and authorization
     ├── config/                    # Configuration files
     ├── country/                   # Country management
@@ -149,11 +148,7 @@ npx ts-node src/tools/db-migrate/cli.ts migrate -d -t development
     ├── middleware/                # Express middleware
     ├── routes/                    # API route definitions
     ├── services/                  # Business logic services
-    ├── settings/                  # User settings
-    ├── shared/                    # Shared resources
     ├── types/                     # TypeScript type definitions
-    ├── university/                # University management
-    ├── users/                     # User management
     ├── utils/                     # Utility functions
     └── index.ts                   # Main application entry point
 ```
