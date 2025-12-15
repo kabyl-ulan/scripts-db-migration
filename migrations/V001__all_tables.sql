@@ -1,66 +1,3 @@
--- public."Session" definition
-
--- Drop table
-
--- DROP TABLE public."Session";
-
-CREATE TABLE public."Session" (
-	id_session int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
-	login text NOT NULL,
-	id_role int4 NOT NULL,
-	id_user int4 NOT NULL,
-	last_action timestamptz(6) NOT NULL,
-	cookie varchar DEFAULT '-1'::integer NOT NULL,
-	offline bool DEFAULT false NOT NULL,
-	is_mobile bool DEFAULT false NOT NULL,
-	CONSTRAINT "Session_pkey" PRIMARY KEY (id_session)
-);
-CREATE INDEX "Session_cookiex" ON public."Session" USING btree (cookie);
-
-
--- public."Session_log" definition
-
--- Drop table
-
--- DROP TABLE public."Session_log";
-
-CREATE TABLE public."Session_log" (
-	id_session_log int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
-	login text NOT NULL,
-	id_role int4 NOT NULL,
-	id_user int4 NOT NULL,
-	log_time timestamptz(6) NOT NULL,
-	is_mobile bool DEFAULT false NOT NULL,
-	ip varchar DEFAULT '-1'::integer NOT NULL,
-	"action" varchar(20) DEFAULT 'login'::character varying NULL, -- Action type: login, logout, token_refresh
-	user_agent text NULL,
-	user_type varchar(10) DEFAULT 'user'::character varying NULL, -- User type: user (employee) or student
-	CONSTRAINT "Session_log_pkey" PRIMARY KEY (id_session_log)
-);
-
--- Column comments
-
-COMMENT ON COLUMN public."Session_log"."action" IS 'Action type: login, logout, token_refresh';
-COMMENT ON COLUMN public."Session_log".user_type IS 'User type: user (employee) or student';
-
-
--- public."_migrations" definition
-
--- Drop table
-
--- DROP TABLE public."_migrations";
-
-CREATE TABLE public."_migrations" (
-	"version" int4 NOT NULL,
-	description varchar(255) NOT NULL,
-	filename varchar(255) NOT NULL,
-	checksum varchar(32) NOT NULL,
-	applied_at timestamptz DEFAULT CURRENT_TIMESTAMP NULL,
-	execution_time_ms int4 NULL,
-	CONSTRAINT "_migrations_pkey" PRIMARY KEY (version)
-);
-
-
 -- public.academic_department definition
 
 -- Drop table
@@ -1398,7 +1335,7 @@ COMMENT ON COLUMN public."structure".sort IS 'Порядок сортировк�
 -- DROP TABLE public.user_table;
 
 CREATE TABLE public.user_table (
-	id_user_table int4 DEFAULT nextval('user_object_type_id_object_type_seq'::regclass) NOT NULL,
+	id_user_table serial4 NOT NULL,
 	user_table varchar(50) NOT NULL,
 	note text NULL,
 	CONSTRAINT user_object_type_pkey PRIMARY KEY (id_user_table),
@@ -1541,7 +1478,7 @@ UPDATE
 -- DROP TABLE public.discipline_academic_department;
 
 CREATE TABLE public.discipline_academic_department (
-	id_discipline_academic_department int8 DEFAULT nextval('discipline_academic_departmen_id_discipline_academic_depart_seq'::regclass) NOT NULL,
+	id_discipline_academic_department bigserial NOT NULL,
 	id_discipline int8 NOT NULL,
 	id_academic_department int4 NOT NULL,
 	system_created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,

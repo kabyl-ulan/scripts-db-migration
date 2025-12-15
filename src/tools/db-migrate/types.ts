@@ -42,6 +42,7 @@ export interface AppliedMigration {
   alterStatements?: string[]; // ALTER TABLE ADD COLUMN statements for missing columns
   dropStatements?: string[]; // ALTER TABLE DROP COLUMN statements for extra columns
   createdFunctions?: string[]; // Auto-created functions from master database
+  createdSequences?: string[]; // Auto-created sequences from master database
 }
 
 export interface MigrationError {

@@ -69,13 +69,16 @@ function parseCreateTables(sql: string): ParsedTable[] {
 function parseColumnDefinitions(columnsBlock: string): ParsedColumn[] {
   const columns: ParsedColumn[] = [];
 
+  // Remove inline comments (-- ...) before parsing to avoid parsing comment content as columns
+  const cleanedBlock = columnsBlock.replace(/--[^\n]*/g, "");
+
   // Split by commas, but respect parentheses (for CHECK constraints, etc.)
   const parts: string[] = [];
   let current = "";
   let depth = 0;
 
-  for (let i = 0; i < columnsBlock.length; i++) {
-    const char = columnsBlock[i];
+  for (let i = 0; i < cleanedBlock.length; i++) {
+    const char = cleanedBlock[i];
 
     if (char === "(") depth++;
     if (char === ")") depth--;
@@ -193,8 +196,22 @@ function generateDropStatements(
  */
 function extractMissingFunctionName(errorMessage: string): string | null {
   // Match patterns like: "function update_system_updated_at_column() does not exist"
-  const match = errorMessage.match(/function\s+([a-z_][a-z0-9_]*)\s*\([^)]*\)\s+does not exist/i);
+  // Also supports function names starting with digits like "111trg_discipline_topic_hours_calc"
+  // May be quoted like "111trg..." if name starts with digit or contains special chars
+  const match = errorMessage.match(/function\s+"?([a-z0-9_]+)"?\s*\([^)]*\)\s+does not exist/i);
   return match ? match[1] : null;
+}
+
+/**
+ * Extract sequence name from PostgreSQL error message
+ */
+function extractMissingSequenceName(errorMessage: string): string | null {
+  // Match patterns like: "relation "user_object_type_id_object_type_seq" does not exist"
+  const match = errorMessage.match(/relation\s+"?([a-z_][a-z0-9_]*)"?\s+does not exist/i);
+  if (match && match[1].endsWith('_seq')) {
+    return match[1];
+  }
+  return null;
 }
 
 /**
@@ -214,6 +231,49 @@ async function getFunctionDefinition(client: Client, functionName: string): Prom
 
     if (result.rows.length > 0) {
       return result.rows[0].function_definition;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Get sequence definition from database
+ */
+async function getSequenceDefinition(client: Client, sequenceName: string): Promise<string | null> {
+  try {
+    const result = await client.query<{
+      start_value: string;
+      min_value: string;
+      max_value: string;
+      increment_by: string;
+      cycle_option: string;
+      cache_size: string;
+    }>(
+      `SELECT
+        start_value::text,
+        min_value::text,
+        max_value::text,
+        increment_by::text,
+        CASE WHEN "cycle" THEN 'CYCLE' ELSE 'NO CYCLE' END as cycle_option,
+        cache_size::text as cache_size
+       FROM pg_sequences
+       WHERE schemaname = 'public'
+         AND sequencename = $1
+       LIMIT 1`,
+      [sequenceName]
+    );
+
+    if (result.rows.length > 0) {
+      const seq = result.rows[0];
+      return `CREATE SEQUENCE IF NOT EXISTS ${sequenceName}
+    INCREMENT BY ${seq.increment_by}
+    MINVALUE ${seq.min_value}
+    MAXVALUE ${seq.max_value}
+    START ${seq.start_value}
+    CACHE ${seq.cache_size}
+    ${seq.cycle_option};`;
     }
     return null;
   } catch (err) {
@@ -274,6 +334,44 @@ function preprocessSQL(content: string): string {
 
   // DROP INDEX -> DROP INDEX IF EXISTS
   processed = processed.replace(/DROP\s+INDEX\s+(?!IF\s+EXISTS)(\S+)/gi, "DROP INDEX IF EXISTS $1");
+
+  // CREATE TRIGGER -> DROP TRIGGER IF EXISTS + CREATE TRIGGER
+  // PostgreSQL doesn't support CREATE TRIGGER IF NOT EXISTS, so we drop first
+  // Use [\s\S] to match across newlines
+  processed = processed.replace(
+    /CREATE\s+TRIGGER\s+(\S+)\s+([\s\S]+?)\s+ON\s+(\S+)/gi,
+    (_match, triggerName, rest, tableName) => {
+      return `DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};\nCREATE TRIGGER ${triggerName} ${rest} ON ${tableName}`;
+    }
+  );
+
+  // CREATE MATERIALIZED VIEW -> DROP + CREATE
+  // PostgreSQL doesn't support CREATE MATERIALIZED VIEW IF NOT EXISTS in older versions
+  processed = processed.replace(
+    /CREATE\s+MATERIALIZED\s+VIEW\s+(\S+)/gi,
+    "DROP MATERIALIZED VIEW IF EXISTS $1 CASCADE;\nCREATE MATERIALIZED VIEW $1"
+  );
+
+  // COMMENT ON CONSTRAINT -> Wrap in DO block to check existence
+  // PostgreSQL doesn't support COMMENT ON CONSTRAINT IF EXISTS
+  processed = processed.replace(
+    /COMMENT\s+ON\s+CONSTRAINT\s+(\S+)\s+ON\s+(\S+)\s+IS\s+'([^']*)';/gi,
+    (_match, constraintName, tableName, comment) => {
+      return `DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE c.conname = '${constraintName}'
+    AND t.relname = split_part('${tableName}', '.', 2)
+    AND n.nspname = COALESCE(split_part('${tableName}', '.', 1), 'public')
+  ) THEN
+    EXECUTE 'COMMENT ON CONSTRAINT ${constraintName} ON ${tableName} IS ''${comment}''';
+  END IF;
+END $$;`;
+    }
+  );
 
   return processed;
 }
@@ -370,13 +468,14 @@ async function applyMigration(
   client: Client,
   migration: Migration,
   content: string,
-  options: { dropExtra?: boolean; masterClient?: Client } = {}
+  options: { dropExtra?: boolean; masterClient?: Client; serverId?: string; database?: string } = {}
 ): Promise<{
   success: boolean;
   executionTime: number;
   alterStatements?: string[];
   dropStatements?: string[];
   createdFunctions?: string[];
+  createdSequences?: string[];
 }> {
   const startTime = Date.now();
   const checksum = calculateChecksum(content);
@@ -387,6 +486,7 @@ async function applyMigration(
   const alterStatements: string[] = [];
   const dropStatements: string[] = [];
   const createdFunctions: string[] = [];
+  const createdSequences: string[] = [];
 
   await client.query("BEGIN");
   try {
@@ -402,8 +502,15 @@ async function applyMigration(
         const alters = generateAlterStatements(table.tableName, table.columns, existingColumns);
 
         for (const alterSQL of alters) {
-          await client.query(alterSQL);
-          alterStatements.push(alterSQL);
+          const dbInfo = options.serverId && options.database ? `${options.serverId}/${options.database}` : "unknown";
+          console.log(`[${dbInfo}] Executing ALTER: ${alterSQL.substring(0, 200)}`);
+          try {
+            await client.query(alterSQL);
+            alterStatements.push(alterSQL);
+          } catch (alterErr) {
+            console.error(`[${dbInfo}] ALTER ERROR: ${(alterErr as Error).message}`);
+            throw alterErr;
+          }
         }
 
         // Drop extra columns if requested
@@ -425,8 +532,9 @@ async function applyMigration(
     try {
       await client.query(processedSQL);
     } catch (sqlError) {
-      // Check if error is due to missing function
       const errorMessage = (sqlError as Error).message;
+
+      // Check if error is due to missing function
       const functionName = extractMissingFunctionName(errorMessage);
 
       if (functionName && masterClient) {
@@ -434,9 +542,30 @@ async function applyMigration(
         const functionDef = await getFunctionDefinition(masterClient, functionName);
 
         if (functionDef) {
-          // Create the missing function
+          // ROLLBACK current transaction since it's aborted
+          await client.query("ROLLBACK");
+
+          // Create the missing function outside transaction
           await client.query(functionDef);
           createdFunctions.push(functionName);
+
+          // Start new transaction and retry the ENTIRE migration from beginning
+          await client.query("BEGIN");
+
+          // Re-do column sync
+          for (const table of parsedTables) {
+            const exists = await tableExists(client, table.tableName);
+            if (exists) {
+              const existingColumns = await getExistingColumns(client, table.tableName);
+              const alters = generateAlterStatements(table.tableName, table.columns, existingColumns);
+              for (const alterSQL of alters) {
+                await client.query(alterSQL);
+                if (!alterStatements.includes(alterSQL)) {
+                  alterStatements.push(alterSQL);
+                }
+              }
+            }
+          }
 
           // Retry the migration SQL
           await client.query(processedSQL);
@@ -444,7 +573,26 @@ async function applyMigration(
           throw sqlError; // Function not found in master, re-throw original error
         }
       } else {
-        throw sqlError; // Not a function error or no master client, re-throw
+        // Check if error is due to missing sequence
+        const sequenceName = extractMissingSequenceName(errorMessage);
+
+        if (sequenceName && masterClient) {
+          // Try to get sequence definition from master database
+          const sequenceDef = await getSequenceDefinition(masterClient, sequenceName);
+
+          if (sequenceDef) {
+            // Create the missing sequence
+            await client.query(sequenceDef);
+            createdSequences.push(sequenceName);
+
+            // Retry the migration SQL
+            await client.query(processedSQL);
+          } else {
+            throw sqlError; // Sequence not found in master, re-throw original error
+          }
+        } else {
+          throw sqlError; // Not a function/sequence error or no master client, re-throw
+        }
       }
     }
 
@@ -468,6 +616,7 @@ async function applyMigration(
       alterStatements: alterStatements.length > 0 ? alterStatements : undefined,
       dropStatements: dropStatements.length > 0 ? dropStatements : undefined,
       createdFunctions: createdFunctions.length > 0 ? createdFunctions : undefined,
+      createdSequences: createdSequences.length > 0 ? createdSequences : undefined,
     };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -487,15 +636,27 @@ export async function migrateDatabase(
   const { dryRun = false, targetVersion = null, masterServer, masterDefaults } = options;
   const client = createClient(serverConfig, database, defaults);
 
-  // Create master client if master server is provided (for auto-fetching functions)
+  // Create master client if master server is provided (for auto-fetching functions/sequences)
   let masterClient: Client | undefined;
   if (masterServer && masterDefaults) {
+    // Try to connect to master with same database name first
     masterClient = createClient(masterServer, database, masterDefaults);
     try {
       await masterClient.connect();
     } catch (err) {
-      // If master connection fails, continue without it
-      masterClient = undefined;
+      // If same database name doesn't exist on master, try first available database
+      if (masterServer.databases.length > 0) {
+        const fallbackDatabase = masterServer.databases[0];
+        masterClient = createClient(masterServer, fallbackDatabase, masterDefaults);
+        try {
+          await masterClient.connect();
+        } catch (fallbackErr) {
+          // If fallback also fails, continue without master client
+          masterClient = undefined;
+        }
+      } else {
+        masterClient = undefined;
+      }
     }
   }
 
@@ -547,6 +708,8 @@ export async function migrateDatabase(
         const result = await applyMigration(client, migration, content, {
           dropExtra: options.dropExtra,
           masterClient,
+          serverId: serverConfig.id,
+          database,
         });
         results.applied.push({
           filename: migration.filename,
@@ -554,6 +717,7 @@ export async function migrateDatabase(
           alterStatements: result.alterStatements,
           dropStatements: result.dropStatements,
           createdFunctions: result.createdFunctions,
+          createdSequences: result.createdSequences,
         });
       } catch (err) {
         results.errors.push({

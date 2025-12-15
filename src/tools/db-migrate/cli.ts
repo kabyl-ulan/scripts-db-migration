@@ -82,6 +82,18 @@ function printResults(results: MigrationResult[]): void {
             logger.info(chalk.gray(`      ${funcName}()`));
           }
         }
+
+        // Show auto-created sequences fetched from master database
+        if (migration.createdSequences && migration.createdSequences.length > 0) {
+          logger.info(
+            chalk.blue(
+              `    → Auto-created ${migration.createdSequences.length} missing sequence(s) from master`
+            )
+          );
+          for (const seqName of migration.createdSequences) {
+            logger.info(chalk.gray(`      ${seqName}`));
+          }
+        }
       }
       totalApplied += result.applied.length;
     } else {
