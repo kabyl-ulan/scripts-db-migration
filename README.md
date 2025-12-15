@@ -142,8 +142,6 @@ npx ts-node src/tools/db-migrate/cli.ts migrate -d -t development
 └── src/                           # Source code
     ├── auth/                      # Authentication and authorization
     ├── config/                    # Configuration files
-    ├── country/                   # Country management
-    ├── email/                     # Email functionality
     ├── locales/                   # Translation files
     ├── middleware/                # Express middleware
     ├── routes/                    # API route definitions
