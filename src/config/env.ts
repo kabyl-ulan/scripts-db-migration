@@ -9,7 +9,7 @@ export const ENV = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: parseInt(process.env.PORT || "3000", 10),
 
-  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "",
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "*",
 
   COOKIE_NAME: process.env.COOKIE_NAME || "sid",
 
@@ -31,14 +31,14 @@ export const ENV = {
   },
 
   EMAIL: {
-    SECUIRITY_URL: getEnv("EMAIL_SECUIRITY_URL"),
-    TYPE_CONFIRM: getEnv("EMAIL_TYPE_CONFIRM"),
-    TYPE_RECOVER: getEnv("EMAIL_TYPE_RECOVER"),
-    TYPE_INFO: getEnv("EMAIL_TYPE_INFO"),
+    SECUIRITY_URL: process.env.EMAIL_SECUIRITY_URL || "",
+    TYPE_CONFIRM: process.env.EMAIL_TYPE_CONFIRM || "",
+    TYPE_RECOVER: process.env.EMAIL_TYPE_RECOVER || "",
+    TYPE_INFO: process.env.EMAIL_TYPE_INFO || "",
   },
 
-  RECAPTCHA_CHECK: getEnv("RECAPTCHA_CHECK") === "true",
-  RECAPTCHA_SECRET: getEnv("RECAPTCHA_SECRET"),
+  RECAPTCHA_CHECK: process.env.RECAPTCHA_CHECK === "true",
+  RECAPTCHA_SECRET: process.env.RECAPTCHA_SECRET || "",
 
   FILE_AVATAR_PATH: getEnv("FILE_AVATAR_PATH"),
   FILE_DOCUMENT_PATH: getEnv("FILE_DOCUMENT_PATH"),

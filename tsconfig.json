@@ -5,20 +5,19 @@
     "moduleResolution": "Node",
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "esModuleInterop": true,
+    "noImplicitAny": true,        // Запрещает неявное использование типа `any`
+    "strictNullChecks": true,     // Обязательная проверка на `null` и `undefined`
+    "strictFunctionTypes": true,  // Более строгая проверка типов функций
+    "noImplicitThis": true,       // Запрещает неявное использование `this` с типом `any`
+    "noUnusedLocals": true,       // Выдает ошибку для неиспользуемых локальных переменных
+    "noUnusedParameters": true,   // Выдает ошибку для неиспользуемых параметров функций
+    "noImplicitReturns": true,    // Требует явного указания возвращаемых значений во всех ветвях функции
+    "esModuleInterop": true,          // Обеспечивает совместимость ECMAScript-модулей и CommonJS
     "outDir": "./dist",
     "rootDir": ".",
     "strict": true,
     "skipLibCheck": true,
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },
-  "include": ["src",],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src"]
 }
