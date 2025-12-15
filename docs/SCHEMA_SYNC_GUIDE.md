@@ -45,7 +45,7 @@ export default {
 Сравнить схему master базы со всеми slave базами:
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts schema:diff edu_prod
+npx ts-node src/tools/db-migrate/cli.ts schema:diff edu_prod
 ```
 
 Результат покажет:
@@ -69,7 +69,7 @@ dev/edu_test - differences found:
 Посмотреть, какие SQL команды будут выполнены **БЕЗ ПРИМЕНЕНИЯ**:
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --dry-run
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod --dry-run
 ```
 
 Результат:
@@ -85,7 +85,7 @@ dev/edu_test - changes needed:
 #### Вариант A: Только добавить недостающие столбцы
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod
 ```
 
 ⚠️ Лишние столбцы (например `updated`) **НЕ БУДУТ УДАЛЕНЫ**.
@@ -93,7 +93,7 @@ npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod
 #### Вариант B: Полная синхронизация (удалить лишние)
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --drop-extra
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod --drop-extra
 ```
 
 ⚠️ **ОПАСНО!** Столбцы, которых нет в master, **БУДУТ УДАЛЕНЫ** вместе с данными!
@@ -104,13 +104,13 @@ npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --drop-extra
 
 ```bash
 # Только development сервера
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod -t slave,development
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod -t slave,development
 
 # Только конкретный сервер
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod -s slave-dev
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod -s slave-dev
 
 # Исключить production
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod -e master
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod -e master
 ```
 
 ## Полный рабочий процесс
@@ -119,13 +119,13 @@ npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod -e master
 
 ```bash
 # 1. Проверить различия
-npx ts-node tools/db-migrate/cli.ts schema:diff edu_prod
+npx ts-node src/tools/db-migrate/cli.ts schema:diff edu_prod
 
 # 2. Dry run для проверки
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --dry-run
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod --dry-run
 
 # 3. Применить изменения
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod
 ```
 
 ### Вариант 2: Автоматизация (скрипт)
@@ -139,11 +139,11 @@ DATABASE="edu_prod"
 MASTER_ID="master"
 
 echo "🔍 Проверяем различия с master базой..."
-npx ts-node tools/db-migrate/cli.ts schema:diff $DATABASE -m $MASTER_ID
+npx ts-node src/tools/db-migrate/cli.ts schema:diff $DATABASE -m $MASTER_ID
 
 echo ""
 echo "📋 Dry run - что будет изменено:"
-npx ts-node tools/db-migrate/cli.ts schema:sync $DATABASE -m $MASTER_ID --dry-run
+npx ts-node src/tools/db-migrate/cli.ts schema:sync $DATABASE -m $MASTER_ID --dry-run
 
 echo ""
 read -p "Применить изменения? (y/N): " -n 1 -r
@@ -151,7 +151,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
     echo "✅ Применяем изменения..."
-    npx ts-node tools/db-migrate/cli.ts schema:sync $DATABASE -m $MASTER_ID
+    npx ts-node src/tools/db-migrate/cli.ts schema:sync $DATABASE -m $MASTER_ID
     echo "✅ Готово!"
 else
     echo "❌ Отменено"
@@ -199,16 +199,16 @@ CREATE TABLE public.main_research (
 
 ```bash
 # Проверить различия
-npx ts-node tools/db-migrate/cli.ts schema:diff edu_prod
+npx ts-node src/tools/db-migrate/cli.ts schema:diff edu_prod
 
 # Dry run
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --dry-run
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod --dry-run
 
 # Синхронизировать (без удаления лишних)
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod
 
 # Или полная синхронизация (с удалением 'updated')
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --drop-extra
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod --drop-extra
 ```
 
 ## Важные замечания
@@ -254,13 +254,13 @@ npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod --drop-extra
 
 ```bash
 # Development
-npx ts-node tools/db-migrate/cli.ts create "add title to main_research"
+npx ts-node src/tools/db-migrate/cli.ts create "add title to main_research"
 # Редактируете миграцию
-npx ts-node tools/db-migrate/cli.ts migrate -s master
+npx ts-node src/tools/db-migrate/cli.ts migrate -s master
 
 # Staging (быстрая синхронизация)
-npx ts-node tools/db-migrate/cli.ts schema:sync edu_prod -t staging
+npx ts-node src/tools/db-migrate/cli.ts schema:sync edu_prod -t staging
 
 # Production (через миграции)
-npx ts-node tools/db-migrate/cli.ts migrate -t production
+npx ts-node src/tools/db-migrate/cli.ts migrate -t production
 ```

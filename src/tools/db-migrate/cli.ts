@@ -1,23 +1,13 @@
-#!/usr/bin/env node
-
-import { program } from "commander";
-import chalk from "chalk";
 import path from "path";
-import dotenv from "dotenv";
 
-import {
-  migrateAll,
-  statusAll,
-  createMigration,
-  migrateDatabase,
-  filterServers,
-} from "./migrator";
+import chalk from "chalk";
+import { program } from "commander";
 
+import logger from "../../utils/logger";
+
+import { migrateAll, statusAll, createMigration, migrateDatabase, filterServers } from "./migrator";
 import { dumpMasterSchema, compareSchemas, syncSchema } from "./schema-sync";
-
 import type { Config, MigrationResult, MigrationStatus } from "./types";
-
-dotenv.config();
 
 async function loadConfig(): Promise<Config> {
   try {
@@ -27,9 +17,9 @@ async function loadConfig(): Promise<Config> {
     const config = require(configPath);
     return (config.default || config) as Config;
   } catch (error) {
-    console.error(chalk.red("Error loading config/databases.js"));
-    console.error(chalk.red((error as Error).message));
-    console.error(
+    logger.error(chalk.red("Error loading config/databases.js"));
+    logger.error(chalk.red((error as Error).message));
+    logger.error(
       chalk.yellow(
         "Copy config/databases.example.js to config/databases.js and configure your servers"
       )
@@ -46,78 +36,85 @@ function printResults(results: MigrationResult[]): void {
     const header = `${result.server}/${result.database}`;
 
     if (result.errors?.length > 0) {
-      console.log(chalk.red(`\n✗ ${header}`));
+      logger.error(chalk.red(`\n✗ ${header}`));
       for (const err of result.errors) {
-        console.log(chalk.red(`  Error: ${err.error}`));
+        logger.error(chalk.red(`  Error: ${err.error}`));
         if (err.migration) {
-          console.log(chalk.red(`  Migration: ${err.migration}`));
+          logger.error(chalk.red(`  Migration: ${err.migration}`));
         }
       }
       totalErrors += result.errors.length;
     } else if (result.applied?.length > 0) {
-      console.log(chalk.green(`\n✓ ${header}`));
+      logger.info(chalk.green(`\n✓ ${header}`));
       for (const migration of result.applied) {
-        const time = migration.executionTime
-          ? ` (${migration.executionTime}ms)`
-          : "";
+        const time = migration.executionTime ? ` (${migration.executionTime}ms)` : "";
         const dry = migration.dryRun ? chalk.yellow(" [DRY RUN]") : "";
-        console.log(chalk.green(`  Applied: ${migration.filename}${time}${dry}`));
+        logger.info(chalk.green(`  Applied: ${migration.filename}${time}${dry}`));
 
         // Show ALTER TABLE ADD COLUMN statements if columns were added automatically
         if (migration.alterStatements && migration.alterStatements.length > 0) {
-          console.log(
+          logger.info(
             chalk.cyan(`    → Auto-added ${migration.alterStatements.length} missing column(s)`)
           );
           for (const stmt of migration.alterStatements) {
-            console.log(chalk.gray(`      ${stmt}`));
+            logger.info(chalk.gray(`      ${stmt}`));
           }
         }
 
         // Show ALTER TABLE DROP COLUMN statements if columns were dropped automatically
         if (migration.dropStatements && migration.dropStatements.length > 0) {
-          console.log(
+          logger.info(
             chalk.red(`    → Auto-dropped ${migration.dropStatements.length} extra column(s)`)
           );
           for (const stmt of migration.dropStatements) {
-            console.log(chalk.gray(`      ${stmt}`));
+            logger.info(chalk.gray(`      ${stmt}`));
+          }
+        }
+
+        // Show auto-created functions fetched from master database
+        if (migration.createdFunctions && migration.createdFunctions.length > 0) {
+          logger.info(
+            chalk.magenta(
+              `    → Auto-created ${migration.createdFunctions.length} missing function(s) from master`
+            )
+          );
+          for (const funcName of migration.createdFunctions) {
+            logger.info(chalk.gray(`      ${funcName}()`));
           }
         }
       }
       totalApplied += result.applied.length;
     } else {
-      console.log(chalk.gray(`\n○ ${header} - up to date`));
+      logger.info(chalk.gray(`\n○ ${header} - up to date`));
     }
   }
 
-  console.log("\n" + chalk.bold("Summary:"));
-  console.log(`  Migrations applied: ${chalk.green(totalApplied)}`);
-  console.log(
-    `  Errors: ${totalErrors > 0 ? chalk.red(totalErrors) : chalk.green(0)}`
-  );
+  logger.info("\n" + chalk.bold("Summary:"));
+  logger.info(`  Migrations applied: ${chalk.green(totalApplied)}`);
+  logger.info(`  Errors: ${totalErrors > 0 ? chalk.red(totalErrors) : chalk.green(0)}`);
 }
 
 function printStatus(results: MigrationStatus[]): void {
-  console.log(chalk.bold("\nMigration Status:\n"));
+  logger.info(chalk.bold("\nMigration Status:\n"));
 
   for (const result of results) {
     const header = `${result.server}/${result.database}`;
 
     if (result.error) {
-      console.log(chalk.red(`✗ ${header}: ${result.error}`));
+      logger.error(chalk.red(`✗ ${header}: ${result.error}`));
       continue;
     }
 
-    const statusIcon =
-      result.pending > 0 ? chalk.yellow("●") : chalk.green("✓");
-    console.log(`${statusIcon} ${chalk.bold(header)}`);
-    console.log(
+    const statusIcon = result.pending > 0 ? chalk.yellow("●") : chalk.green("✓");
+    logger.info(`${statusIcon} ${chalk.bold(header)}`);
+    logger.info(
       `  Applied: ${chalk.green(result.applied)} | Pending: ${result.pending > 0 ? chalk.yellow(result.pending) : chalk.green(0)}`
     );
 
     if (result.pending > 0) {
       const pendingMigrations = result.migrations.filter((m) => !m.applied);
       for (const m of pendingMigrations) {
-        console.log(chalk.yellow(`    - ${m.filename}`));
+        logger.info(chalk.yellow(`    - ${m.filename}`));
       }
     }
   }
@@ -141,26 +138,20 @@ program
   .action(async (options) => {
     const config = await loadConfig();
 
-    console.log(chalk.bold("Running migrations...\n"));
+    logger.info(chalk.bold("Running migrations...\n"));
 
     if (options.dryRun) {
-      console.log(chalk.yellow("DRY RUN MODE - no changes will be made\n"));
+      logger.info(chalk.yellow("DRY RUN MODE - no changes will be made\n"));
     }
 
     if (options.dropExtra) {
-      console.log(chalk.red("⚠️  DROP EXTRA MODE - columns not in migrations will be dropped!\n"));
+      logger.info(chalk.red("⚠️  DROP EXTRA MODE - columns not in migrations will be dropped!\n"));
     }
 
     const filterOptions = {
-      tags: options.tags
-        ? options.tags.split(",").map((s: string) => s.trim())
-        : [],
-      ids: options.servers
-        ? options.servers.split(",").map((s: string) => s.trim())
-        : [],
-      exclude: options.exclude
-        ? options.exclude.split(",").map((s: string) => s.trim())
-        : [],
+      tags: options.tags ? options.tags.split(",").map((s: string) => s.trim()) : [],
+      ids: options.servers ? options.servers.split(",").map((s: string) => s.trim()) : [],
+      exclude: options.exclude ? options.exclude.split(",").map((s: string) => s.trim()) : [],
       dryRun: options.dryRun,
       concurrency: parseInt(options.concurrency, 10),
       targetVersion: options.target ? parseInt(options.target, 10) : null,
@@ -183,12 +174,8 @@ program
     const config = await loadConfig();
 
     const filterOptions = {
-      tags: options.tags
-        ? options.tags.split(",").map((s: string) => s.trim())
-        : [],
-      ids: options.servers
-        ? options.servers.split(",").map((s: string) => s.trim())
-        : [],
+      tags: options.tags ? options.tags.split(",").map((s: string) => s.trim()) : [],
+      ids: options.servers ? options.servers.split(",").map((s: string) => s.trim()) : [],
     };
 
     const results = await statusAll(config, filterOptions);
@@ -200,8 +187,8 @@ program
   .description("Create a new migration file")
   .action(async (description: string) => {
     const result = await createMigration(description);
-    console.log(chalk.green(`Created migration: ${result.filename}`));
-    console.log(chalk.gray(`Path: ${result.path}`));
+    logger.info(chalk.green(`Created migration: ${result.filename}`));
+    logger.info(chalk.gray(`Path: ${result.path}`));
   });
 
 program
@@ -214,16 +201,14 @@ program
     const server = config.servers.find((s) => s.id === serverId);
 
     if (!server) {
-      console.error(chalk.red(`Server not found: ${serverId}`));
+      logger.error(chalk.red(`Server not found: ${serverId}`));
       process.exit(1);
     }
 
-    console.log(
-      chalk.bold(`Running migrations on ${serverId}/${database}...\n`)
-    );
+    logger.info(chalk.bold(`Running migrations on ${serverId}/${database}...\n`));
 
     if (options.dropExtra) {
-      console.log(chalk.red("⚠️  DROP EXTRA MODE - columns not in migrations will be dropped!\n"));
+      logger.info(chalk.red("⚠️  DROP EXTRA MODE - columns not in migrations will be dropped!\n"));
     }
 
     const result = await migrateDatabase(server, database, config.defaults, {
@@ -245,25 +230,18 @@ program
     const master = config.servers.find((s) => s.id === options.master);
 
     if (!master) {
-      console.error(chalk.red(`Master server not found: ${options.master}`));
+      logger.error(chalk.red(`Master server not found: ${options.master}`));
       process.exit(1);
     }
 
-    console.log(
-      chalk.bold(`Dumping schema from ${options.master}/${database}...\n`)
-    );
+    logger.info(chalk.bold(`Dumping schema from ${options.master}/${database}...\n`));
 
     try {
-      const result = await dumpMasterSchema(
-        master,
-        database,
-        config.defaults,
-        options.output
-      );
-      console.log(chalk.green(`Schema saved: ${result.path}`));
-      console.log(chalk.gray(`Size: ${(result.size / 1024).toFixed(1)} KB`));
+      const result = await dumpMasterSchema(master, database, config.defaults, options.output);
+      logger.info(chalk.green(`Schema saved: ${result.path}`));
+      logger.info(chalk.gray(`Size: ${(result.size / 1024).toFixed(1)} KB`));
     } catch (err) {
-      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      logger.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
     }
   });
@@ -279,36 +257,25 @@ program
     const master = config.servers.find((s) => s.id === options.master);
 
     if (!master) {
-      console.error(chalk.red(`Master server not found: ${options.master}`));
+      logger.error(chalk.red(`Master server not found: ${options.master}`));
       process.exit(1);
     }
 
     const filterOptions = {
-      tags: options.tags
-        ? options.tags.split(",").map((s: string) => s.trim())
-        : [],
-      ids: options.servers
-        ? options.servers.split(",").map((s: string) => s.trim())
-        : [],
+      tags: options.tags ? options.tags.split(",").map((s: string) => s.trim()) : [],
+      ids: options.servers ? options.servers.split(",").map((s: string) => s.trim()) : [],
       exclude: [options.master],
     };
 
     const targets = filterServers(config.servers, filterOptions);
 
-    console.log(
-      chalk.bold(`Comparing schemas (master: ${options.master}/${database})\n`)
-    );
+    logger.info(chalk.bold(`Comparing schemas (master: ${options.master}/${database})\n`));
 
     for (const target of targets) {
       if (!target.databases.includes(database)) continue;
 
       try {
-        const diff = await compareSchemas(
-          master,
-          target,
-          database,
-          config.defaults
-        );
+        const diff = await compareSchemas(master, target, database, config.defaults);
         const header = `${target.id}/${database}`;
 
         const hasDiff =
@@ -317,39 +284,33 @@ program
           diff.differentTables.length > 0;
 
         if (!hasDiff) {
-          console.log(chalk.green(`✓ ${header} - in sync`));
+          logger.info(chalk.green(`✓ ${header} - in sync`));
           continue;
         }
 
-        console.log(chalk.yellow(`\n● ${header} - differences found:`));
+        logger.info(chalk.yellow(`\n● ${header} - differences found:`));
 
         if (diff.missingTables.length > 0) {
-          console.log(
-            chalk.red(`  Missing tables: ${diff.missingTables.join(", ")}`)
-          );
+          logger.info(chalk.red(`  Missing tables: ${diff.missingTables.join(", ")}`));
         }
 
         if (diff.extraTables.length > 0) {
-          console.log(
-            chalk.yellow(`  Extra tables: ${diff.extraTables.join(", ")}`)
-          );
+          logger.info(chalk.yellow(`  Extra tables: ${diff.extraTables.join(", ")}`));
         }
 
         for (const table of diff.differentTables) {
-          console.log(chalk.yellow(`  Table ${table.table}:`));
+          logger.info(chalk.yellow(`  Table ${table.table}:`));
           for (const col of table.columns) {
             if (col.type === "missing_column") {
               const expected =
                 typeof col.expected === "object"
                   ? (col.expected as { data_type: string }).data_type
                   : col.expected;
-              console.log(
-                chalk.red(`    - Missing column: ${col.column} (${expected})`)
-              );
+              logger.info(chalk.red(`    - Missing column: ${col.column} (${expected})`));
             } else if (col.type === "extra_column") {
-              console.log(chalk.yellow(`    - Extra column: ${col.column}`));
+              logger.info(chalk.yellow(`    - Extra column: ${col.column}`));
             } else if (col.type === "type_mismatch") {
-              console.log(
+              logger.info(
                 chalk.red(
                   `    - Type mismatch: ${col.column} (expected: ${col.expected}, actual: ${col.actual})`
                 )
@@ -357,13 +318,11 @@ program
             }
           }
           for (const idx of table.indexes) {
-            console.log(chalk.red(`    - Missing index: ${idx.index}`));
+            logger.info(chalk.red(`    - Missing index: ${idx.index}`));
           }
         }
       } catch (err) {
-        console.log(
-          chalk.red(`✗ ${target.id}/${database}: ${(err as Error).message}`)
-        );
+        logger.info(chalk.red(`✗ ${target.id}/${database}: ${(err as Error).message}`));
       }
     }
   });
@@ -381,28 +340,22 @@ program
     const master = config.servers.find((s) => s.id === options.master);
 
     if (!master) {
-      console.error(chalk.red(`Master server not found: ${options.master}`));
+      logger.error(chalk.red(`Master server not found: ${options.master}`));
       process.exit(1);
     }
 
     const filterOptions = {
-      tags: options.tags
-        ? options.tags.split(",").map((s: string) => s.trim())
-        : [],
-      ids: options.servers
-        ? options.servers.split(",").map((s: string) => s.trim())
-        : [],
+      tags: options.tags ? options.tags.split(",").map((s: string) => s.trim()) : [],
+      ids: options.servers ? options.servers.split(",").map((s: string) => s.trim()) : [],
       exclude: [options.master],
     };
 
     const targets = filterServers(config.servers, filterOptions);
 
-    console.log(
-      chalk.bold(`Syncing schema from ${options.master}/${database}\n`)
-    );
+    logger.info(chalk.bold(`Syncing schema from ${options.master}/${database}\n`));
 
     if (options.dryRun) {
-      console.log(chalk.yellow("DRY RUN MODE - no changes will be made\n"));
+      logger.info(chalk.yellow("DRY RUN MODE - no changes will be made\n"));
     }
 
     let synced = 0;
@@ -412,43 +365,33 @@ program
       if (!target.databases.includes(database)) continue;
 
       try {
-        const result = await syncSchema(
-          master,
-          target,
-          database,
-          config.defaults,
-          {
-            dryRun: options.dryRun,
-            dropExtra: options.dropExtra,
-          }
-        );
+        const result = await syncSchema(master, target, database, config.defaults, {
+          dryRun: options.dryRun,
+          dropExtra: options.dropExtra,
+        });
 
         const header = `${result.server}/${result.database}`;
 
         if (result.status === "in_sync") {
-          console.log(chalk.green(`✓ ${header} - already in sync`));
+          logger.info(chalk.green(`✓ ${header} - already in sync`));
         } else if (result.dryRun) {
-          console.log(chalk.yellow(`\n● ${header} - changes needed:`));
+          logger.info(chalk.yellow(`\n● ${header} - changes needed:`));
           for (const sql of result.changes) {
-            console.log(chalk.gray(`  ${sql}`));
+            logger.info(chalk.gray(`  ${sql}`));
           }
         } else {
-          console.log(
-            chalk.green(`✓ ${header} - synced (${result.changes.length} changes)`)
-          );
+          logger.info(chalk.green(`✓ ${header} - synced (${result.changes.length} changes)`));
           synced++;
         }
       } catch (err) {
-        console.log(
-          chalk.red(`✗ ${target.id}/${database}: ${(err as Error).message}`)
-        );
+        logger.info(chalk.red(`✗ ${target.id}/${database}: ${(err as Error).message}`));
         errors++;
       }
     }
 
-    console.log("\n" + chalk.bold("Summary:"));
-    console.log(`  Synced: ${chalk.green(synced)}`);
-    console.log(`  Errors: ${errors > 0 ? chalk.red(errors) : chalk.green(0)}`);
+    logger.info("\n" + chalk.bold("Summary:"));
+    logger.info(`  Synced: ${chalk.green(synced)}`);
+    logger.info(`  Errors: ${errors > 0 ? chalk.red(errors) : chalk.green(0)}`);
   });
 
 program.parse();

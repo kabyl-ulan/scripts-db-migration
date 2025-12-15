@@ -1,7 +1,8 @@
-import { Client } from "pg";
+import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
-import crypto from "crypto";
+
+import { Client } from "pg";
 
 import type {
   Config,
@@ -70,18 +71,18 @@ function parseColumnDefinitions(columnsBlock: string): ParsedColumn[] {
 
   // Split by commas, but respect parentheses (for CHECK constraints, etc.)
   const parts: string[] = [];
-  let current = '';
+  let current = "";
   let depth = 0;
 
   for (let i = 0; i < columnsBlock.length; i++) {
     const char = columnsBlock[i];
 
-    if (char === '(') depth++;
-    if (char === ')') depth--;
+    if (char === "(") depth++;
+    if (char === ")") depth--;
 
-    if (char === ',' && depth === 0) {
+    if (char === "," && depth === 0) {
       parts.push(current.trim());
-      current = '';
+      current = "";
     } else {
       current += char;
     }
@@ -129,7 +130,7 @@ async function tableExists(client: Client, tableName: string): Promise<boolean> 
       WHERE table_schema = 'public'
       AND table_name = $1
     )`,
-    [tableName.replace(/^public\./, '')]
+    [tableName.replace(/^public\./, "")]
   );
   return result.rows[0].exists;
 }
@@ -143,9 +144,9 @@ async function getExistingColumns(client: Client, tableName: string): Promise<Se
      FROM information_schema.columns
      WHERE table_schema = 'public'
      AND table_name = $1`,
-    [tableName.replace(/^public\./, '')]
+    [tableName.replace(/^public\./, "")]
   );
-  return new Set(result.rows.map(r => r.column_name));
+  return new Set(result.rows.map((r) => r.column_name));
 }
 
 /**
@@ -160,9 +161,7 @@ function generateAlterStatements(
 
   for (const col of parsedColumns) {
     if (!existingColumns.has(col.name)) {
-      statements.push(
-        `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS ${col.definition};`
-      );
+      statements.push(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS ${col.definition};`);
     }
   }
 
@@ -178,17 +177,51 @@ function generateDropStatements(
   existingColumns: Set<string>
 ): string[] {
   const statements: string[] = [];
-  const parsedColumnNames = new Set(parsedColumns.map(col => col.name));
+  const parsedColumnNames = new Set(parsedColumns.map((col) => col.name));
 
   for (const existingCol of existingColumns) {
     if (!parsedColumnNames.has(existingCol)) {
-      statements.push(
-        `ALTER TABLE ${tableName} DROP COLUMN IF EXISTS ${existingCol};`
-      );
+      statements.push(`ALTER TABLE ${tableName} DROP COLUMN IF EXISTS ${existingCol};`);
     }
   }
 
   return statements;
+}
+
+/**
+ * Extract function name from PostgreSQL error message
+ */
+function extractMissingFunctionName(errorMessage: string): string | null {
+  // Match patterns like: "function update_system_updated_at_column() does not exist"
+  const match = errorMessage.match(/function\s+([a-z_][a-z0-9_]*)\s*\([^)]*\)\s+does not exist/i);
+  return match ? match[1] : null;
+}
+
+/**
+ * Get function definition from database
+ */
+async function getFunctionDefinition(
+  client: Client,
+  functionName: string
+): Promise<string | null> {
+  try {
+    const result = await client.query<{ function_definition: string }>(
+      `SELECT pg_get_functiondef(p.oid) AS function_definition
+       FROM pg_proc p
+       JOIN pg_namespace n ON n.oid = p.pronamespace
+       WHERE n.nspname = 'public'
+         AND p.proname = $1
+       LIMIT 1`,
+      [functionName]
+    );
+
+    if (result.rows.length > 0) {
+      return result.rows[0].function_definition;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
 }
 
 /**
@@ -234,10 +267,7 @@ function preprocessSQL(content: string): string {
   );
 
   // DROP TABLE -> DROP TABLE IF EXISTS
-  processed = processed.replace(
-    /DROP\s+TABLE\s+(?!IF\s+EXISTS)(\S+)/gi,
-    "DROP TABLE IF EXISTS $1"
-  );
+  processed = processed.replace(/DROP\s+TABLE\s+(?!IF\s+EXISTS)(\S+)/gi, "DROP TABLE IF EXISTS $1");
 
   // DROP SEQUENCE -> DROP SEQUENCE IF EXISTS
   processed = processed.replace(
@@ -246,10 +276,7 @@ function preprocessSQL(content: string): string {
   );
 
   // DROP INDEX -> DROP INDEX IF EXISTS
-  processed = processed.replace(
-    /DROP\s+INDEX\s+(?!IF\s+EXISTS)(\S+)/gi,
-    "DROP INDEX IF EXISTS $1"
-  );
+  processed = processed.replace(/DROP\s+INDEX\s+(?!IF\s+EXISTS)(\S+)/gi, "DROP INDEX IF EXISTS $1");
 
   return processed;
 }
@@ -346,16 +373,23 @@ async function applyMigration(
   client: Client,
   migration: Migration,
   content: string,
-  options: { dropExtra?: boolean } = {}
-): Promise<{ success: boolean; executionTime: number; alterStatements?: string[]; dropStatements?: string[] }> {
+  options: { dropExtra?: boolean; masterClient?: Client } = {}
+): Promise<{
+  success: boolean;
+  executionTime: number;
+  alterStatements?: string[];
+  dropStatements?: string[];
+  createdFunctions?: string[];
+}> {
   const startTime = Date.now();
   const checksum = calculateChecksum(content);
-  const { dropExtra = false } = options;
+  const { dropExtra = false, masterClient } = options;
 
   // Parse CREATE TABLE statements to check for missing columns
   const parsedTables = parseCreateTables(content);
   const alterStatements: string[] = [];
   const dropStatements: string[] = [];
+  const createdFunctions: string[] = [];
 
   await client.query("BEGIN");
   try {
@@ -368,11 +402,7 @@ async function applyMigration(
         const existingColumns = await getExistingColumns(client, table.tableName);
 
         // Add missing columns
-        const alters = generateAlterStatements(
-          table.tableName,
-          table.columns,
-          existingColumns
-        );
+        const alters = generateAlterStatements(table.tableName, table.columns, existingColumns);
 
         for (const alterSQL of alters) {
           await client.query(alterSQL);
@@ -381,11 +411,7 @@ async function applyMigration(
 
         // Drop extra columns if requested
         if (dropExtra) {
-          const drops = generateDropStatements(
-            table.tableName,
-            table.columns,
-            existingColumns
-          );
+          const drops = generateDropStatements(table.tableName, table.columns, existingColumns);
 
           for (const dropSQL of drops) {
             await client.query(dropSQL);
@@ -399,7 +425,31 @@ async function applyMigration(
     const processedSQL = preprocessSQL(content);
 
     // Execute main migration SQL
-    await client.query(processedSQL);
+    try {
+      await client.query(processedSQL);
+    } catch (sqlError) {
+      // Check if error is due to missing function
+      const errorMessage = (sqlError as Error).message;
+      const functionName = extractMissingFunctionName(errorMessage);
+
+      if (functionName && masterClient) {
+        // Try to get function definition from master database
+        const functionDef = await getFunctionDefinition(masterClient, functionName);
+
+        if (functionDef) {
+          // Create the missing function
+          await client.query(functionDef);
+          createdFunctions.push(functionName);
+
+          // Retry the migration SQL
+          await client.query(processedSQL);
+        } else {
+          throw sqlError; // Function not found in master, re-throw original error
+        }
+      } else {
+        throw sqlError; // Not a function error or no master client, re-throw
+      }
+    }
 
     // Record migration in tracking table
     await client.query(
@@ -420,6 +470,7 @@ async function applyMigration(
       executionTime: Date.now() - startTime,
       alterStatements: alterStatements.length > 0 ? alterStatements : undefined,
       dropStatements: dropStatements.length > 0 ? dropStatements : undefined,
+      createdFunctions: createdFunctions.length > 0 ? createdFunctions : undefined,
     };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -436,8 +487,21 @@ export async function migrateDatabase(
   defaults: DatabaseDefaults,
   options: MigrateOptions = {}
 ): Promise<MigrationResult> {
-  const { dryRun = false, targetVersion = null } = options;
+  const { dryRun = false, targetVersion = null, masterServer, masterDefaults } = options;
   const client = createClient(serverConfig, database, defaults);
+
+  // Create master client if master server is provided (for auto-fetching functions)
+  let masterClient: Client | undefined;
+  if (masterServer && masterDefaults) {
+    masterClient = createClient(masterServer, database, masterDefaults);
+    try {
+      await masterClient.connect();
+    } catch (err) {
+      // If master connection fails, continue without it
+      masterClient = undefined;
+    }
+  }
+
   const results: MigrationResult = {
     server: serverConfig.id,
     database,
@@ -485,12 +549,14 @@ export async function migrateDatabase(
       try {
         const result = await applyMigration(client, migration, content, {
           dropExtra: options.dropExtra,
+          masterClient,
         });
         results.applied.push({
           filename: migration.filename,
           executionTime: result.executionTime,
           alterStatements: result.alterStatements,
           dropStatements: result.dropStatements,
+          createdFunctions: result.createdFunctions,
         });
       } catch (err) {
         results.errors.push({
@@ -506,6 +572,9 @@ export async function migrateDatabase(
     });
   } finally {
     await client.end();
+    if (masterClient) {
+      await masterClient.end();
+    }
   }
 
   return results;
@@ -606,6 +675,9 @@ export async function migrateAll(
   const { concurrency = 5 } = options;
   const servers = filterServers(config.servers, options);
 
+  // Find master server for auto-fetching missing functions
+  const masterServer = config.servers.find((s) => s.tags?.includes("master"));
+
   // Build list of all database targets
   const targets: { server: ServerConfig; database: string }[] = [];
   for (const server of servers) {
@@ -620,7 +692,11 @@ export async function migrateAll(
     const batch = targets.slice(i, i + concurrency);
     const batchResults = await Promise.all(
       batch.map(({ server, database }) =>
-        migrateDatabase(server, database, config.defaults, options)
+        migrateDatabase(server, database, config.defaults, {
+          ...options,
+          masterServer,
+          masterDefaults: config.defaults,
+        })
       )
     );
     results.push(...batchResults);

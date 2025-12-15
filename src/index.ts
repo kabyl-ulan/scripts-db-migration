@@ -9,8 +9,6 @@ import { ENV } from "./config/env";
 import translator from "./config/i18n";
 
 // Middleware
-import { livenessHandler } from "./health/liveness";
-import { readinessHandler } from "./health/readiness";
 import { errorHandler } from "./middleware/errorHandler";
 import { loggerMiddleware } from "./middleware/logger";
 import { normalizeBodyMiddleware } from "./middleware/normalizeBody";
@@ -21,12 +19,12 @@ import router from "./routes";
 // Utils
 import { connectToRedis } from "./utils/cache";
 import { corsMiddleware } from "./utils/corsMiddleware";
+import { refreshMv } from "./utils/cron/refreshMv";
 import handleRedirectIndex from "./utils/handleRedirectIndex";
 import noCacheMiddleware from "./utils/noCacheMiddleware";
 import { gracefulShutdown, getShutdownStatus, setShutdownStatus } from "./utils/shutdown";
 import swaggerRoute from "./utils/swagger";
 import { withTimeout } from "./utils/timeout";
-import { refreshMv } from "./utils/cron/refreshMv";
 
 // Health checks
 
@@ -36,10 +34,6 @@ const PORT = ENV.PORT;
 // Security
 app.disable("x-powered-by"); // Hide Express signature
 app.set("trust proxy", 1);
-
-// Health check endpoints
-app.get("/health", livenessHandler);
-app.get("/ready", readinessHandler);
 
 // Middleware stack
 app.use(corsMiddleware());

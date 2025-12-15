@@ -31,39 +31,52 @@ cp config/databases.example.js config/databases.js
 
 ### 3. Создайте миграцию
 ```bash
-npx ts-node tools/db-migrate/cli.ts create "add users table"
+npm run migrate:create "add users table"
 ```
 
 ### 4. Запустите миграции
 ```bash
-npx ts-node tools/db-migrate/cli.ts migrate
+npm run migrate
 ```
 
 ---
 
 ## Основные команды
 
+### Через npm scripts (рекомендуется)
 ```bash
 # Статус миграций
-npx ts-node tools/db-migrate/cli.ts status
+npm run migrate:status
 
 # Создать новую миграцию
-npx ts-node tools/db-migrate/cli.ts create "описание"
+npm run migrate:create "описание"
 
 # Применить все миграции
-npx ts-node tools/db-migrate/cli.ts migrate
+npm run migrate
 
 # Dry run (предпросмотр)
-npx ts-node tools/db-migrate/cli.ts migrate -d
-
-# Фильтр по тегам
-npx ts-node tools/db-migrate/cli.ts migrate -t production
-
-# Одна база
-npx ts-node tools/db-migrate/cli.ts single dev foreigners_new
+npm run migrate:dry
 
 # Сравнение схем
-npx ts-node tools/db-migrate/cli.ts schema:diff foreigners_new
+npm run schema:diff <database>
+
+# Синхронизация схем
+npm run schema:sync <database>
+```
+
+### Прямой вызов CLI (для расширенных опций)
+```bash
+# Фильтр по тегам
+npx ts-node src/tools/db-migrate/cli.ts migrate -t production
+
+# Фильтр по серверам
+npx ts-node src/tools/db-migrate/cli.ts migrate -s master,slave-1
+
+# Одна база
+npx ts-node src/tools/db-migrate/cli.ts single dev foreigners_new
+
+# Dry run с фильтром
+npx ts-node src/tools/db-migrate/cli.ts migrate -d -t development
 ```
 
 📖 [Полное руководство →](./docs/MIGRATION_GUIDE.md) | 📝 [Примеры миграций →](./docs/EXAMPLES.md)

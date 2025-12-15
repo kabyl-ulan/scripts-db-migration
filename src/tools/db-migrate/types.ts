@@ -41,6 +41,7 @@ export interface AppliedMigration {
   dryRun?: boolean;
   alterStatements?: string[]; // ALTER TABLE ADD COLUMN statements for missing columns
   dropStatements?: string[]; // ALTER TABLE DROP COLUMN statements for extra columns
+  createdFunctions?: string[]; // Auto-created functions from master database
 }
 
 export interface MigrationError {
@@ -74,6 +75,8 @@ export interface MigrateOptions extends FilterOptions {
   concurrency?: number;
   targetVersion?: number | null;
   dropExtra?: boolean; // Automatically drop columns not in migration CREATE TABLE
+  masterServer?: ServerConfig; // Master server for auto-fetching missing functions
+  masterDefaults?: DatabaseDefaults; // Connection defaults for master server
 }
 
 // Schema sync types

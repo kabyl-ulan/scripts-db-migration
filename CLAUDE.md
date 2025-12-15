@@ -29,33 +29,43 @@ npm run format:check     # Check code formatting
 
 ## CLI Commands
 
-### Migration Commands
+### Quick Commands (via npm scripts)
 ```bash
-npx ts-node tools/db-migrate/cli.ts migrate                        # Run all pending migrations
-npx ts-node tools/db-migrate/cli.ts migrate -t production          # Filter by tags
-npx ts-node tools/db-migrate/cli.ts migrate -s master,slave-1      # Filter by server IDs
-npx ts-node tools/db-migrate/cli.ts migrate -e dev-server          # Exclude servers
-npx ts-node tools/db-migrate/cli.ts migrate -d                     # Dry run (preview changes)
-npx ts-node tools/db-migrate/cli.ts migrate -c 10                  # Set concurrency (default: 5)
-npx ts-node tools/db-migrate/cli.ts migrate --target 5             # Migrate up to version 5
-
-npx ts-node tools/db-migrate/cli.ts status                         # Show migration status for all DBs
-npx ts-node tools/db-migrate/cli.ts single <server> <database>     # Run on single database
-npx ts-node tools/db-migrate/cli.ts create "add users table"       # Create new migration file
+npm run migrate:status                    # Show migration status for all DBs
+npm run migrate:create "add users table"  # Create new migration file
+npm run migrate                           # Run all pending migrations
+npm run migrate:dry                       # Dry run (preview changes)
+npm run schema:diff <database>            # Compare master vs targets
+npm run schema:sync <database>            # Sync schema to targets
 ```
 
-### Schema Sync Commands
+### Advanced Migration Commands
 ```bash
-npx ts-node tools/db-migrate/cli.ts schema:dump <database>         # Dump schema from master
-npx ts-node tools/db-migrate/cli.ts schema:diff <database>         # Compare master vs targets
-npx ts-node tools/db-migrate/cli.ts schema:sync <database>         # Sync schema to targets
-npx ts-node tools/db-migrate/cli.ts schema:sync <database> -d      # Dry run sync
-npx ts-node tools/db-migrate/cli.ts schema:sync <database> --drop-extra  # Drop extra tables/columns
+npx ts-node src/tools/db-migrate/cli.ts migrate                        # Run all pending migrations
+npx ts-node src/tools/db-migrate/cli.ts migrate -t production          # Filter by tags
+npx ts-node src/tools/db-migrate/cli.ts migrate -s master,slave-1      # Filter by server IDs
+npx ts-node src/tools/db-migrate/cli.ts migrate -e dev-server          # Exclude servers
+npx ts-node src/tools/db-migrate/cli.ts migrate -d                     # Dry run (preview changes)
+npx ts-node src/tools/db-migrate/cli.ts migrate -c 10                  # Set concurrency (default: 5)
+npx ts-node src/tools/db-migrate/cli.ts migrate --target 5             # Migrate up to version 5
+
+npx ts-node src/tools/db-migrate/cli.ts status                         # Show migration status for all DBs
+npx ts-node src/tools/db-migrate/cli.ts single <server> <database>     # Run on single database
+npx ts-node src/tools/db-migrate/cli.ts create "add users table"       # Create new migration file
+```
+
+### Advanced Schema Sync Commands
+```bash
+npx ts-node src/tools/db-migrate/cli.ts schema:dump <database>         # Dump schema from master
+npx ts-node src/tools/db-migrate/cli.ts schema:diff <database>         # Compare master vs targets
+npx ts-node src/tools/db-migrate/cli.ts schema:sync <database>         # Sync schema to targets
+npx ts-node src/tools/db-migrate/cli.ts schema:sync <database> -d      # Dry run sync
+npx ts-node src/tools/db-migrate/cli.ts schema:sync <database> --drop-extra  # Drop extra tables/columns
 ```
 
 ## Architecture
 
-### Source Files (tools/db-migrate/)
+### Source Files (src/tools/db-migrate/)
 - `cli.ts` - Command-line interface using Commander.js
 - `migrator.ts` - Core migration logic (apply, status, create migrations)
 - `schema-sync.ts` - Schema comparison and synchronization between databases

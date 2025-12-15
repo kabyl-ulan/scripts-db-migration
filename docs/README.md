@@ -48,13 +48,13 @@
 
 ```bash
 # 1. Посмотреть статус
-npx ts-node tools/db-migrate/cli.ts status
+npx ts-node src/tools/db-migrate/cli.ts status
 
 # 2. Создать миграцию
-npx ts-node tools/db-migrate/cli.ts create "описание"
+npx ts-node src/tools/db-migrate/cli.ts create "описание"
 
 # 3. Применить миграции
-npx ts-node tools/db-migrate/cli.ts migrate
+npx ts-node src/tools/db-migrate/cli.ts migrate
 ```
 
 ## 🔗 Полезные ссылки

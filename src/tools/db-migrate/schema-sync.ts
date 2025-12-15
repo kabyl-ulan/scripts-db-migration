@@ -1,8 +1,9 @@
-import { Client } from "pg";
 import { exec } from "child_process";
-import { promisify } from "util";
 import fs from "fs/promises";
 import path from "path";
+import { promisify } from "util";
+
+import { Client } from "pg";
 
 import type {
   ServerConfig,
@@ -63,18 +64,20 @@ export async function dumpMasterSchema(
  * Clean schema dump - remove volatile parts
  */
 function cleanSchemaDump(schema: string): string {
-  return schema
-    // Remove comments with timestamps
-    .replace(/^--.*$/gm, "")
-    // Remove empty lines
-    .replace(/^\s*[\r\n]/gm, "\n")
-    // Remove SET statements
-    .replace(/^SET .*$/gm, "")
-    // Remove SELECT pg_catalog
-    .replace(/^SELECT pg_catalog\..*$/gm, "")
-    // Normalize whitespace
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return (
+    schema
+      // Remove comments with timestamps
+      .replace(/^--.*$/gm, "")
+      // Remove empty lines
+      .replace(/^\s*[\r\n]/gm, "\n")
+      // Remove SET statements
+      .replace(/^SET .*$/gm, "")
+      // Remove SELECT pg_catalog
+      .replace(/^SELECT pg_catalog\..*$/gm, "")
+      // Normalize whitespace
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 /**
@@ -95,10 +98,7 @@ async function getTables(client: Client): Promise<string[]> {
 /**
  * Get table structure
  */
-async function getTableStructure(
-  client: Client,
-  tableName: string
-): Promise<TableStructure> {
+async function getTableStructure(client: Client, tableName: string): Promise<TableStructure> {
   const columns = await client.query<ColumnInfo>(
     `
     SELECT
@@ -182,12 +182,8 @@ export async function compareSchemas(
     const targetTables = await getTables(targetClient);
 
     // Find missing and extra tables
-    differences.missingTables = masterTables.filter(
-      (t) => !targetTables.includes(t)
-    );
-    differences.extraTables = targetTables.filter(
-      (t) => !masterTables.includes(t)
-    );
+    differences.missingTables = masterTables.filter((t) => !targetTables.includes(t));
+    differences.extraTables = targetTables.filter((t) => !masterTables.includes(t));
 
     // Compare common tables
     const commonTables = masterTables.filter((t) => targetTables.includes(t));
@@ -196,14 +192,8 @@ export async function compareSchemas(
       const masterStructure = await getTableStructure(masterClient, table);
       const targetStructure = await getTableStructure(targetClient, table);
 
-      const columnDiffs = compareColumns(
-        masterStructure.columns,
-        targetStructure.columns
-      );
-      const indexDiffs = compareIndexes(
-        masterStructure.indexes,
-        targetStructure.indexes
-      );
+      const columnDiffs = compareColumns(masterStructure.columns, targetStructure.columns);
+      const indexDiffs = compareIndexes(masterStructure.indexes, targetStructure.indexes);
 
       if (columnDiffs.length > 0 || indexDiffs.length > 0) {
         differences.differentTables.push({
@@ -221,10 +211,7 @@ export async function compareSchemas(
   }
 }
 
-function compareColumns(
-  masterCols: ColumnInfo[],
-  targetCols: ColumnInfo[]
-): ColumnDiff[] {
+function compareColumns(masterCols: ColumnInfo[], targetCols: ColumnInfo[]): ColumnDiff[] {
   const diffs: ColumnDiff[] = [];
   const masterMap = new Map(masterCols.map((c) => [c.column_name, c]));
   const targetMap = new Map(targetCols.map((c) => [c.column_name, c]));
@@ -256,10 +243,7 @@ function compareColumns(
   return diffs;
 }
 
-function compareIndexes(
-  masterIdx: IndexInfo[],
-  targetIdx: IndexInfo[]
-): IndexDiff[] {
+function compareIndexes(masterIdx: IndexInfo[], targetIdx: IndexInfo[]): IndexDiff[] {
   const diffs: IndexDiff[] = [];
   const masterMap = new Map(masterIdx.map((i) => [i.indexname, i.indexdef]));
   const targetMap = new Map(targetIdx.map((i) => [i.indexname, i.indexdef]));
@@ -285,9 +269,7 @@ export function generateSyncSQL(
 
   // Missing tables - need full CREATE TABLE (from dump)
   for (const table of differences.missingTables) {
-    statements.push(
-      `-- TODO: Create table ${table} (copy from master schema dump)`
-    );
+    statements.push(`-- TODO: Create table ${table} (copy from master schema dump)`);
   }
 
   // Extra tables
@@ -301,11 +283,9 @@ export function generateSyncSQL(
   for (const diff of differences.differentTables) {
     for (const col of diff.columns) {
       if (col.type === "missing_column" && typeof col.expected === "object") {
-        const colInfo = col.expected as ColumnInfo;
+        const colInfo = col.expected;
         const nullable = colInfo.is_nullable === "YES" ? "" : " NOT NULL";
-        const defaultVal = colInfo.column_default
-          ? ` DEFAULT ${colInfo.column_default}`
-          : "";
+        const defaultVal = colInfo.column_default ? ` DEFAULT ${colInfo.column_default}` : "";
         statements.push(
           `ALTER TABLE ${diff.table} ADD COLUMN ${col.column} ${colInfo.data_type}${nullable}${defaultVal};`
         );
@@ -338,12 +318,7 @@ export async function syncSchema(
 ): Promise<SyncResult> {
   const { dryRun = false } = options;
 
-  const differences = await compareSchemas(
-    masterConfig,
-    targetConfig,
-    database,
-    defaults
-  );
+  const differences = await compareSchemas(masterConfig, targetConfig, database, defaults);
   const syncSQL = generateSyncSQL(differences, options);
 
   if (syncSQL.length === 0) {

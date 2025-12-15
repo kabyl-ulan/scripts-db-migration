@@ -168,7 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 ### Автоматическое создание
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts create "add user roles"
+npx ts-node src/tools/db-migrate/cli.ts create "add user roles"
 ```
 
 Создаст файл: `migrations/V002__add_user_roles.sql` с шаблоном:
@@ -244,7 +244,7 @@ COMMIT;
 ### Посмотреть статус
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts status
+npx ts-node src/tools/db-migrate/cli.ts status
 ```
 
 **Вывод:**
@@ -261,19 +261,19 @@ Migration Status:
 ### Запустить все миграции
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts migrate
+npx ts-node src/tools/db-migrate/cli.ts migrate
 ```
 
 ### Запустить на конкретной базе данных
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts single dev foreigners_new
+npx ts-node src/tools/db-migrate/cli.ts single dev foreigners_new
 ```
 
 ### Dry-run (предварительный просмотр)
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts migrate -d
+npx ts-node src/tools/db-migrate/cli.ts migrate -d
 ```
 
 Покажет, какие миграции будут применены, **без реального выполнения**.
@@ -281,7 +281,7 @@ npx ts-node tools/db-migrate/cli.ts migrate -d
 ### Миграция до определённой версии
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts migrate --target 5
+npx ts-node src/tools/db-migrate/cli.ts migrate --target 5
 ```
 
 Применит только миграции V001...V005.
@@ -289,7 +289,7 @@ npx ts-node tools/db-migrate/cli.ts migrate --target 5
 ### Параллельное выполнение
 
 ```bash
-npx ts-node tools/db-migrate/cli.ts migrate -c 10
+npx ts-node src/tools/db-migrate/cli.ts migrate -c 10
 ```
 
 Устанавливает параллельность на 10 баз одновременно (по умолчанию: 5).
@@ -346,27 +346,27 @@ export default {
 
 ```bash
 # Только development серверы
-npx ts-node tools/db-migrate/cli.ts migrate -t development
+npx ts-node src/tools/db-migrate/cli.ts migrate -t development
 
 # Только production серверы
-npx ts-node tools/db-migrate/cli.ts migrate -t production
+npx ts-node src/tools/db-migrate/cli.ts migrate -t production
 ```
 
 ### Фильтрация по ID серверов
 
 ```bash
 # Только указанные серверы
-npx ts-node tools/db-migrate/cli.ts migrate -s dev,staging
+npx ts-node src/tools/db-migrate/cli.ts migrate -s dev,staging
 
 # Исключить серверы
-npx ts-node tools/db-migrate/cli.ts migrate -e prod-1,prod-2
+npx ts-node src/tools/db-migrate/cli.ts migrate -e prod-1,prod-2
 ```
 
 ### Комбинированные фильтры
 
 ```bash
 # Production серверы, кроме replica
-npx ts-node tools/db-migrate/cli.ts migrate -t production -e prod-2
+npx ts-node src/tools/db-migrate/cli.ts migrate -t production -e prod-2
 ```
 
 ---
@@ -473,7 +473,7 @@ CREATE TRIGGER trigger_users_updated_at
 1. **НЕ ИЗМЕНЯЙТЕ** применённые миграции!
 2. Создайте новую миграцию с исправлениями:
    ```bash
-   npx ts-node tools/db-migrate/cli.ts create "fix previous migration"
+   npx ts-node src/tools/db-migrate/cli.ts create "fix previous migration"
    ```
 
 ### Ошибка: "relation already exists"
@@ -512,7 +512,7 @@ SELECT * FROM pg_locks WHERE NOT granted;
 1. Исправьте SQL в файле миграции
 2. Запустите снова:
    ```bash
-   npx ts-node tools/db-migrate/cli.ts migrate
+   npx ts-node src/tools/db-migrate/cli.ts migrate
    ```
 3. Миграция не была записана в `_migrations` → можно безопасно исправить
 
@@ -523,7 +523,7 @@ SELECT * FROM pg_locks WHERE NOT granted;
 **Решение:**
 1. Создайте **обратную миграцию**:
    ```bash
-   npx ts-node tools/db-migrate/cli.ts create "revert add user roles"
+   npx ts-node src/tools/db-migrate/cli.ts create "revert add user roles"
    ```
 
 2. Напишите SQL для отката:
@@ -541,11 +541,11 @@ SELECT * FROM pg_locks WHERE NOT granted;
 - Это **нормально** - каждый сервер применяет только нужные миграции
 - Проверьте статус:
   ```bash
-  npx ts-node tools/db-migrate/cli.ts status
+  npx ts-node src/tools/db-migrate/cli.ts status
   ```
 - Примените на всех:
   ```bash
-  npx ts-node tools/db-migrate/cli.ts migrate
+  npx ts-node src/tools/db-migrate/cli.ts migrate
   ```
 
 ---
@@ -567,10 +567,10 @@ SELECT * FROM pg_locks WHERE NOT granted;
 3. **Тестируйте миграции локально**
    ```bash
    # Dry run сначала
-   npx ts-node tools/db-migrate/cli.ts migrate -d -s dev
+   npx ts-node src/tools/db-migrate/cli.ts migrate -d -s dev
 
    # Потом реальный запуск
-   npx ts-node tools/db-migrate/cli.ts migrate -s dev
+   npx ts-node src/tools/db-migrate/cli.ts migrate -s dev
    ```
 
 4. **Делайте резервные копии перед миграциями production**
@@ -613,13 +613,13 @@ SELECT * FROM pg_locks WHERE NOT granted;
 
 ```bash
 # Дамп схемы из master
-npx ts-node tools/db-migrate/cli.ts schema:dump foreigners_new
+npx ts-node src/tools/db-migrate/cli.ts schema:dump foreigners_new
 
 # Сравнение схем
-npx ts-node tools/db-migrate/cli.ts schema:diff foreigners_new
+npx ts-node src/tools/db-migrate/cli.ts schema:diff foreigners_new
 
 # Синхронизация
-npx ts-node tools/db-migrate/cli.ts schema:sync foreigners_new
+npx ts-node src/tools/db-migrate/cli.ts schema:sync foreigners_new
 ```
 
 ### Переменные окружения
@@ -646,37 +646,37 @@ export default {
 
 ```bash
 # Показать все команды
-npx ts-node tools/db-migrate/cli.ts --help
+npx ts-node src/tools/db-migrate/cli.ts --help
 
 # Статус всех БД
-npx ts-node tools/db-migrate/cli.ts status
+npx ts-node src/tools/db-migrate/cli.ts status
 
 # Создать миграцию
-npx ts-node tools/db-migrate/cli.ts create "description"
+npx ts-node src/tools/db-migrate/cli.ts create "description"
 
 # Применить все миграции
-npx ts-node tools/db-migrate/cli.ts migrate
+npx ts-node src/tools/db-migrate/cli.ts migrate
 
 # Dry run
-npx ts-node tools/db-migrate/cli.ts migrate -d
+npx ts-node src/tools/db-migrate/cli.ts migrate -d
 
 # Фильтр по тегам
-npx ts-node tools/db-migrate/cli.ts migrate -t production
+npx ts-node src/tools/db-migrate/cli.ts migrate -t production
 
 # Фильтр по серверам
-npx ts-node tools/db-migrate/cli.ts migrate -s dev,staging
+npx ts-node src/tools/db-migrate/cli.ts migrate -s dev,staging
 
 # Исключить серверы
-npx ts-node tools/db-migrate/cli.ts migrate -e prod-replica
+npx ts-node src/tools/db-migrate/cli.ts migrate -e prod-replica
 
 # Одна база
-npx ts-node tools/db-migrate/cli.ts single dev foreigners_new
+npx ts-node src/tools/db-migrate/cli.ts single dev foreigners_new
 
 # Параллельность
-npx ts-node tools/db-migrate/cli.ts migrate -c 10
+npx ts-node src/tools/db-migrate/cli.ts migrate -c 10
 
 # До версии
-npx ts-node tools/db-migrate/cli.ts migrate --target 5
+npx ts-node src/tools/db-migrate/cli.ts migrate --target 5
 ```
 
 ---

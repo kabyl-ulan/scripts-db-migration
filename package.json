@@ -1,7 +1,7 @@
 {
-  "name": "ort-registry-backend",
+  "name": "scripts-db-migaration",
   "version": "1.0.0",
-  "description": "Backend for the ORT Registry application",
+  "description": "Backend",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon",
@@ -10,7 +10,13 @@
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "migrate": "ts-node src/tools/db-migrate/cli.ts migrate",
+    "migrate:dry": "ts-node src/tools/db-migrate/cli.ts migrate --dry-run",
+    "migrate:status": "ts-node src/tools/db-migrate/cli.ts status",
+    "migrate:create": "ts-node src/tools/db-migrate/cli.ts create",
+    "schema:diff": "ts-node src/tools/db-migrate/cli.ts schema:diff",
+    "schema:sync": "ts-node src/tools/db-migrate/cli.ts schema:sync"
   },
   "author": "",
   "license": "ISC",
