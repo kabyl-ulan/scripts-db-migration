@@ -200,10 +200,7 @@ function extractMissingFunctionName(errorMessage: string): string | null {
 /**
  * Get function definition from database
  */
-async function getFunctionDefinition(
-  client: Client,
-  functionName: string
-): Promise<string | null> {
+async function getFunctionDefinition(client: Client, functionName: string): Promise<string | null> {
   try {
     const result = await client.query<{ function_definition: string }>(
       `SELECT pg_get_functiondef(p.oid) AS function_definition
