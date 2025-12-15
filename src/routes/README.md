@@ -2,7 +2,7 @@
 
 ## Overview
 
-EduGate API follows industry-standard practices for API design including health checks and clear resource organization.
+API follows industry-standard practices for API design including health checks and clear resource organization.
 
 ## Structure
 
@@ -17,12 +17,15 @@ routes/
 ### System Endpoints
 
 #### Health Check
+
 ```
 GET /api/health
 ```
+
 Returns system health status for monitoring and load balancers.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -34,15 +37,18 @@ Returns system health status for monitoring and load balancers.
 ```
 
 #### API Information
+
 ```
 GET /api/info
 ```
+
 Returns API metadata.
 
 **Response:**
+
 ```json
 {
-  "name": "EduGate API",
+  "name": "API",
   "version": "1.0.0",
   "documentation": "/swagger/api-docs"
 }
@@ -57,6 +63,7 @@ All API endpoints use the following pattern:
 ```
 
 **Examples:**
+
 ```
 POST /api/auth/login
 GET  /api/university/my
@@ -66,10 +73,12 @@ PUT  /api/users/1
 ## Resource Groups
 
 ### Authentication & User Management
+
 - `/auth` - Authentication (login, logout, registration)
 - `/users` - User management
 
 ### Core Resources (Alphabetically Sorted)
+
 - `/abiturient` - Applicant management
 - `/country` - Country data
 - `/email` - Email operations
@@ -82,6 +91,7 @@ PUT  /api/users/1
 ## API Design Philosophy
 
 The API follows RESTful principles with:
+
 - Clear resource naming
 - Standard HTTP methods (GET, POST, PUT, DELETE)
 - Consistent response formats
@@ -122,7 +132,7 @@ import newResourceRouter from "../new-resource";
 
 // ... other imports ...
 
-router.use("/new-resource", newResourceRouter);  // Alphabetical order
+router.use("/new-resource", newResourceRouter); // Alphabetical order
 ```
 
 ## Error Handling
@@ -142,6 +152,7 @@ All routes use standardized error responses:
 ## Monitoring & Metrics
 
 Use the health check endpoint for:
+
 - Load balancer health checks
 - Uptime monitoring
 - Performance tracking
@@ -150,6 +161,7 @@ Use the health check endpoint for:
 ## Security
 
 All routes (except `/health` and `/info`) should:
+
 - Require authentication via JWT tokens
 - Use rate limiting (configured in `src/index.ts`)
 - Validate input data with Zod schemas

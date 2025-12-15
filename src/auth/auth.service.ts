@@ -7,7 +7,8 @@ import { signToken, verifyToken } from "../utils/jwt";
 import { Check, Delete, Login } from "../utils/session";
 
 import { AuthRepository } from "./auth.repository";
-import { IAuthState, IUserLoginParams } from "./types";
+import { ILoginInput } from "./auth.schema";
+import { IAuthState } from "./types";
 
 export class AuthService {
   private authRepository = new AuthRepository();
@@ -20,13 +21,12 @@ export class AuthService {
     return { authState: user, token, tokenType: "Bearer" };
   }
 
-  async getUserByPinPassword(data: IUserLoginParams) {
-    const { login, password, role } = data;
+  async getUserByPinPassword(data: ILoginInput) {
+    const { login, password } = data;
     const hashPassword = md5(password);
     return await this.authRepository.findUserByPinPasswordAuth({
       login,
       hashPassword,
-      id_role: role,
     });
   }
 

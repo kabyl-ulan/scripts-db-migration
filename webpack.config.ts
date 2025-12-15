@@ -9,7 +9,7 @@ export default {
   externals: [nodeExternals()],
   output: {
     path: path.join(__dirname),
-    filename: `edugate.js`,
+    filename: `db-migration.js`,
     libraryTarget: "var",
     library: "app",
   },

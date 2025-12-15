@@ -1,11 +1,5 @@
 import { IRoleTypeNumber } from "../config/roles";
 
-export interface IUserLoginParams {
-  login: string;
-  password: string;
-  role: IRoleTypeNumber;
-}
-
 export interface IAuthState {
   id: number;
   role: IRoleTypeNumber;

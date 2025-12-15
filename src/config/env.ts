@@ -11,6 +11,8 @@ export const ENV = {
 
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "",
 
+  COOKIE_NAME: process.env.COOKIE_NAME || "sid",
+
   ENC_KEY_BASE64: getEnv("ENC_KEY_BASE64"),
   ENC_IV_BASE64: getEnv("ENC_IV_BASE64"),
 

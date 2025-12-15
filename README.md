@@ -97,9 +97,9 @@ npx ts-node src/tools/db-migrate/cli.ts migrate -d -t development
 
 ---
 
-## EduGate Backend System
+## Backend System
 
-Этот проект также содержит backend систему EduGate - платформу управления образованием, построенную на TypeScript и Node.js. Система предоставляет API для управления университетами, заявками студентов и административными функциями.
+Этот проект также содержит backend систему - платформу управления образованием, построенную на TypeScript и Node.js. Система предоставляет API для управления университетами, заявками студентов и административными функциями.
 
 ## Key Features
 - User authentication and role-based access control (ministry officials, university admins, applicants)
@@ -132,7 +132,6 @@ npx ts-node src/tools/db-migrate/cli.ts migrate -d -t development
 ```
 ├── .env                           # Environment variables 
 ├── ecosystem.config.js            # PM2 process manager 
-├── edugate.js                     # Production build output
 ├── nodemon.json                   # Development server configuration
 ├── package.json                   # Project dependencies and scripts
 ├── README.md                      # Project documentation
@@ -209,9 +208,6 @@ npm run format
 ```bash
 # Start with PM2 using ecosystem config
 pm2 start ecosystem.config.js --env prod
-
-# View logs
-pm2 logs edugate
 ```
 
 ## Development Conventions
@@ -246,39 +242,17 @@ pm2 logs edugate
 - Unit tests and integration tests locations to be confirmed
 - API endpoint testing with Swagger validation
 
-## Roles and Permissions
-The system supports multiple user roles:
-- Ministry officials (role: 2) - Ministry of Education staff
-- University administrators (role: 3) - University administrative staff  
-- Commission representatives (role: 6) - University admission committee
-- Applicants (role: 5) - Students applying to universities
-
 Each role has specific permissions for different API endpoints as defined in the authorization middleware.
 
 ## Key API Endpoints
-- `/api/auth/` - Authentication (login, register, token validation, etc.)
-- `/api/abiturient/` - Applicant functionality and applications
-- `/api/university/` - University management
-- `/api/country/` - Country management
-- `/api/users/` - User management
-- `/api/settings/` - User settings and profile updates
-- `/api/shared/` - Shared resources (genders, countries, regions, etc.)
-- `/api/email/` - Email verification functionality
-
-## Database Schema
-The system uses PostgreSQL with stored procedures for complex operations. Key database objects include:
-- Users table for different user roles
-- University management tables
-- Applicant information tables
-- Application tracking tables
-- Localization tables for multilingual support
+- `/api/auth/` - Authentication (login, token validation, etc.)
 
 The SQL directory contains stored procedures for different operations like university grid display, authentication functions, and data updates.
 
 ## Build Process
 The application uses:
 1. TypeScript compiler (tsc) to transpile TypeScript to JavaScript
-2. Webpack to bundle the compiled output into a single file (edugate.js)
+2. Webpack to bundle the compiled output into a single file
 3. Terser plugin for minification during the webpack build process
 
 ## Configuration Files

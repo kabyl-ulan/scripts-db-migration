@@ -14,7 +14,6 @@ const ctrl = new AuthController();
  *     tags:
  *       - Auth
  *     summary: Авторизация пользователя
- *     description: Вход по логину, паролю и роли (2, 3 или 5)
  *     parameters:
  *       - $ref: '#/components/parameters/langParam'
  *     requestBody:
@@ -34,10 +33,6 @@ const ctrl = new AuthController();
  *               password:
  *                 type: string
  *                 example: "secret123"
- *               role:
- *                 type: integer
- *                 enum: [2, 3, 5]
- *                 example: 5
  *     responses:
  *       200:
  *         description: Успешный вход, возвращает токен и данные пользователя
@@ -69,7 +64,6 @@ router.post("/check", ctrl.checkToken);
  *     tags:
  *       - Auth
  *     summary: Получить информацию об авторизованном пользователе
- *     description: Возвращает основную информацию о текущем пользователе (id, role, name, id_university, file_name).
  *     security:
  *       - bearerAuth: []
  *     parameters:

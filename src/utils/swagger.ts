@@ -8,7 +8,7 @@ const router = Router();
 const swaggerUiOptions = {
   explorer: true,
   customCss: ".swagger-ui .topbar { display: none }",
-  customSiteTitle: "Edugate App API Documentation",
+  customSiteTitle: "App API Documentation",
   customfavIcon: "/favicon.ico",
   swaggerOptions: {
     persistAuthorization: true,

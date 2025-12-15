@@ -23,7 +23,7 @@ function findPublicDir(startDir: string): string | null {
 }
 
 export default function handleRedirectIndex(req: Request, res: Response, _next: NextFunction) {
-  if (req.originalUrl === "/") return res.redirect(`/edugate`);
+  if (req.originalUrl === "/") return res.redirect(`/`);
 
   const publicDir = findPublicDir(__dirname);
 

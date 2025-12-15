@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 
 import { dbQuery } from "../config/db";
+import { ENV } from "../config/env";
 
 import { md5 } from "./crypto";
 
-const COOKIE_NAME = "EDUGATEPORTAL";
+const COOKIE_NAME = ENV.COOKIE_NAME;
 const COOKIE_MOBILE = "isMobile";
 
 export async function Delete(res: Response, token: string) {
