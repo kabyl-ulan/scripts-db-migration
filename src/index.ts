@@ -20,7 +20,6 @@ import router from "./routes";
 import { connectToRedis } from "./utils/cache";
 import { corsMiddleware } from "./utils/corsMiddleware";
 import { refreshMv } from "./utils/cron/refreshMv";
-import handleRedirectIndex from "./utils/handleRedirectIndex";
 import noCacheMiddleware from "./utils/noCacheMiddleware";
 import { gracefulShutdown, getShutdownStatus, setShutdownStatus } from "./utils/shutdown";
 import swaggerRoute from "./utils/swagger";
@@ -50,8 +49,8 @@ app.use(translator);
 // Routes
 app.use("/api", router);
 app.use("/swagger", swaggerRoute);
-app.use("/edugate", express.static("public"));
-app.use("/", handleRedirectIndex);
+// app.use("/edugate", express.static("public"));
+// app.use("/", handleRedirectIndex);
 
 // Error Handler (must be last)
 app.use(errorHandler);
