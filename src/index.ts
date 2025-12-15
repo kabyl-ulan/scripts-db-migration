@@ -49,8 +49,7 @@ app.use(translator);
 // Routes
 app.use("/api", router);
 app.use("/swagger", swaggerRoute);
-// app.use("/edugate", express.static("public"));
-// app.use("/", handleRedirectIndex);
+app.use("/", express.static("public"));
 
 // Error Handler (must be last)
 app.use(errorHandler);
