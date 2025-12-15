@@ -1,1 +1,0 @@
-import{t as e}from"./index.dc8861ba.js";globalThis.jotaiAtomCache=globalThis.jotaiAtomCache||{cache:new Map,get(t,a){return this.cache.has(t)?this.cache.get(t):(this.cache.set(t,a),a)}};const c=async t=>(await e.get(`/shared/university/${t}/specialty`)).data,o=async t=>(await e.get(`/shared/faculty/${t}/contacts`)).data;export{o as a,c as g};

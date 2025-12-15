@@ -1,1 +1,0 @@
-.animationScroll{opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease}.animationScroll.animations_active{transform:translateY(0)}.animationScroll.active_opacity{opacity:1}

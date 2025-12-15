@@ -1,1 +1,0 @@
-import{j as a,dE as u}from"./index.dc8861ba.js";globalThis.jotaiAtomCache=globalThis.jotaiAtomCache||{cache:new Map,get(t,e){return this.cache.has(t)?this.cache.get(t):(this.cache.set(t,e),e)}};const h=()=>a(u,{children:"\u0418\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u044F"});export{h as default};

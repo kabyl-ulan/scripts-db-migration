@@ -38,7 +38,7 @@ function printResults(results: MigrationResult[]): void {
     if (result.errors?.length > 0) {
       logger.error(chalk.red(`\n✗ ${header}`));
       for (const err of result.errors) {
-        logger.error(chalk.red(`  Error: ${err.error}`));
+        logger.error(chalk.red(`  Error printResults: ${err.error}`));
         if (err.migration) {
           logger.error(chalk.red(`  Migration: ${err.migration}`));
         }
