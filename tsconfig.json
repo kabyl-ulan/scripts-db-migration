@@ -14,7 +14,7 @@
     "noImplicitReturns": true,    // Требует явного указания возвращаемых значений во всех ветвях функции
     "esModuleInterop": true,          // Обеспечивает совместимость ECMAScript-модулей и CommonJS
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "strict": true,
     "skipLibCheck": true,
     "typeRoots": ["./src/types", "./node_modules/@types"]
