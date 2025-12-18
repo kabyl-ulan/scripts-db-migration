@@ -2,12 +2,14 @@ import { Request, Response, Router } from "express";
 
 // ─────── Module Routers ─────────
 import authRouter from "../auth";
+import migrationRouter from "../migration";
 import { sendError } from "../utils/response";
 
 const router = Router();
 
 // ─────── API Routes ─────────
 router.use("/auth", authRouter);
+router.use("/migration", migrationRouter);
 
 // ─────── 404 Handler (must be last) ─────────
 /**

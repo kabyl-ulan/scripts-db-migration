@@ -257,5 +257,15 @@
     "deleted": "Key deleted from cache",
     "pattern_deleted": "Keys deleted by pattern",
     "flushed": "All cache cleared"
+  },
+  "migration": {
+    "server_required": "Please specify database server",
+    "server_invalid": "Invalid server format",
+    "database_required": "Please specify database name",
+    "database_invalid": "Invalid database format",
+    "tables_empty": "Tables list cannot be empty",
+    "functions_empty": "Functions list cannot be empty",
+    "tables_or_functions_required": "Please specify at least one table or function, or use 'all'",
+    "generated": "Migration created successfully"
   }
 }

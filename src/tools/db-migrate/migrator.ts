@@ -203,6 +203,23 @@ function extractMissingFunctionName(errorMessage: string): string | null {
 }
 
 /**
+ * Extract all EXECUTE FUNCTION references from SQL file
+ */
+function extractAllFunctionReferences(sql: string): string[] {
+  const functions = new Set<string>();
+
+  // Match patterns like: EXECUTE FUNCTION "function_name"() or EXECUTE FUNCTION function_name()
+  const regex = /EXECUTE\s+FUNCTION\s+"?([a-z0-9_]+)"?\s*\(/gi;
+  let match;
+
+  while ((match = regex.exec(sql)) !== null) {
+    functions.add(match[1]);
+  }
+
+  return Array.from(functions);
+}
+
+/**
  * Extract sequence name from PostgreSQL error message
  */
 function extractMissingSequenceName(errorMessage: string): string | null {
@@ -212,6 +229,23 @@ function extractMissingSequenceName(errorMessage: string): string | null {
     return match[1];
   }
   return null;
+}
+
+/**
+ * Extract all sequence references from SQL file (nextval calls)
+ */
+function extractAllSequenceReferences(sql: string): string[] {
+  const sequences = new Set<string>();
+
+  // Match patterns like: nextval('sequence_name'::regclass) or nextval('sequence_name')
+  const regex = /nextval\s*\(\s*'([a-z0-9_]+)'(?:::regclass)?\s*\)/gi;
+  let match;
+
+  while ((match = regex.exec(sql)) !== null) {
+    sequences.add(match[1]);
+  }
+
+  return Array.from(sequences);
 }
 
 /**
@@ -282,11 +316,61 @@ async function getSequenceDefinition(client: Client, sequenceName: string): Prom
 }
 
 /**
+ * Cache for PostgreSQL reserved keywords (loaded once per session)
+ */
+let cachedReservedKeywords: Set<string> | null = null;
+
+/**
+ * Get PostgreSQL reserved keywords from database
+ */
+async function getReservedKeywords(client: Client): Promise<Set<string>> {
+  if (cachedReservedKeywords) {
+    return cachedReservedKeywords;
+  }
+
+  try {
+    const result = await client.query<{ word: string }>(
+      `SELECT word FROM pg_get_keywords() WHERE catcode IN ('R', 'T')`
+      // R = reserved, T = reserved (can be function or type)
+    );
+    cachedReservedKeywords = new Set(result.rows.map(r => r.word.toLowerCase()));
+    return cachedReservedKeywords;
+  } catch {
+    // Fallback to common problematic keywords if query fails
+    cachedReservedKeywords = new Set(['order', 'user', 'group', 'key', 'type', 'comment', 'default', 'table', 'column']);
+    return cachedReservedKeywords;
+  }
+}
+
+/**
+ * Quote reserved keywords used as column names in column definitions
+ */
+function quoteReservedKeywords(content: string, reservedKeywords: Set<string>): string {
+  let processed = content;
+
+  for (const keyword of reservedKeywords) {
+    // Pattern: tab/spaces + unquoted keyword + space + column type
+    const pattern = new RegExp(
+      `(^|[\\t ])${keyword}(\\s+(?:int|varchar|character|text|bool|float|numeric|serial|bigint|smallint|timestamp|date|time|uuid|json|int2|int4|int8)[^,)\\n]*)`,
+      'gim'
+    );
+    processed = processed.replace(pattern, `$1"${keyword}"$2`);
+  }
+
+  return processed;
+}
+
+/**
  * Preprocess SQL to add IF NOT EXISTS/IF EXISTS clauses automatically
  * This prevents errors when tables/columns already exist
  */
-function preprocessSQL(content: string): string {
+function preprocessSQL(content: string, reservedKeywords?: Set<string>): string {
   let processed = content;
+
+  // First, quote reserved keywords used as column names
+  if (reservedKeywords) {
+    processed = quoteReservedKeywords(processed, reservedKeywords);
+  }
 
   // CREATE TABLE -> CREATE TABLE IF NOT EXISTS
   processed = processed.replace(
@@ -488,6 +572,9 @@ async function applyMigration(
   const createdFunctions: string[] = [];
   const createdSequences: string[] = [];
 
+  // Get reserved keywords from PostgreSQL for automatic quoting
+  const reservedKeywords = await getReservedKeywords(client);
+
   await client.query("BEGIN");
   try {
     // For each CREATE TABLE, check if table exists and sync columns
@@ -526,7 +613,7 @@ async function applyMigration(
     }
 
     // Preprocess SQL to add IF NOT EXISTS/IF EXISTS clauses
-    const processedSQL = preprocessSQL(content);
+    const processedSQL = preprocessSQL(content, reservedKeywords);
 
     // Execute main migration SQL
     try {
@@ -538,16 +625,35 @@ async function applyMigration(
       const functionName = extractMissingFunctionName(errorMessage);
 
       if (functionName && masterClient) {
-        // Try to get function definition from master database
-        const functionDef = await getFunctionDefinition(masterClient, functionName);
+        // ROLLBACK current transaction since it's aborted
+        await client.query("ROLLBACK");
 
-        if (functionDef) {
-          // ROLLBACK current transaction since it's aborted
-          await client.query("ROLLBACK");
+        // Extract ALL function references from the migration SQL
+        const allFunctionNames = extractAllFunctionReferences(content);
+        const dbInfo = options.serverId && options.database ? `${options.serverId}/${options.database}` : "unknown";
 
-          // Create the missing function outside transaction
-          await client.query(functionDef);
-          createdFunctions.push(functionName);
+        console.log(`[${dbInfo}] Detected missing function. Extracting ALL ${allFunctionNames.length} functions from master...`);
+
+        // Try to get ALL function definitions from master database
+        let functionsCreated = 0;
+        for (const funcName of allFunctionNames) {
+          const functionDef = await getFunctionDefinition(masterClient, funcName);
+          if (functionDef) {
+            try {
+              await client.query(functionDef);
+              createdFunctions.push(funcName);
+              functionsCreated++;
+              console.log(`[${dbInfo}]   ✓ Created function: ${funcName}()`);
+            } catch (createErr) {
+              console.log(`[${dbInfo}]   ⚠ Failed to create ${funcName}(): ${(createErr as Error).message}`);
+            }
+          } else {
+            console.log(`[${dbInfo}]   ✗ Not found in master: ${funcName}()`);
+          }
+        }
+
+        if (functionsCreated > 0) {
+          console.log(`[${dbInfo}] Created ${functionsCreated}/${allFunctionNames.length} functions. Retrying migration...`);
 
           // Start new transaction and retry the ENTIRE migration from beginning
           await client.query("BEGIN");
@@ -570,25 +676,69 @@ async function applyMigration(
           // Retry the migration SQL
           await client.query(processedSQL);
         } else {
-          throw sqlError; // Function not found in master, re-throw original error
+          throw sqlError; // No functions created, re-throw original error
         }
       } else {
         // Check if error is due to missing sequence
         const sequenceName = extractMissingSequenceName(errorMessage);
 
         if (sequenceName && masterClient) {
-          // Try to get sequence definition from master database
-          const sequenceDef = await getSequenceDefinition(masterClient, sequenceName);
+          // ROLLBACK current transaction since it's aborted
+          await client.query("ROLLBACK");
 
-          if (sequenceDef) {
-            // Create the missing sequence
-            await client.query(sequenceDef);
-            createdSequences.push(sequenceName);
+          // Extract ALL sequence references from the migration SQL
+          const allSequenceNames = extractAllSequenceReferences(content);
+          const dbInfo = options.serverId && options.database ? `${options.serverId}/${options.database}` : "unknown";
+
+          console.log(`[${dbInfo}] Detected missing sequence. Extracting ALL ${allSequenceNames.length} sequences from master...`);
+
+          // Try to get ALL sequence definitions from master database
+          let sequencesCreated = 0;
+          for (const seqName of allSequenceNames) {
+            const sequenceDef = await getSequenceDefinition(masterClient, seqName);
+            if (sequenceDef) {
+              try {
+                await client.query(sequenceDef);
+                createdSequences.push(seqName);
+                sequencesCreated++;
+                console.log(`[${dbInfo}]   ✓ Created sequence: ${seqName}`);
+              } catch (createErr) {
+                // Sequence might already exist, that's OK
+                const errMsg = (createErr as Error).message;
+                if (!errMsg.includes('already exists')) {
+                  console.log(`[${dbInfo}]   ⚠ Failed to create ${seqName}: ${errMsg}`);
+                }
+              }
+            } else {
+              console.log(`[${dbInfo}]   ✗ Not found in master: ${seqName}`);
+            }
+          }
+
+          if (sequencesCreated > 0) {
+            console.log(`[${dbInfo}] Created ${sequencesCreated}/${allSequenceNames.length} sequences. Retrying migration...`);
+
+            // Start new transaction and retry the ENTIRE migration from beginning
+            await client.query("BEGIN");
+
+            // Re-do column sync
+            for (const table of parsedTables) {
+              const exists = await tableExists(client, table.tableName);
+              if (exists) {
+                const existingColumns = await getExistingColumns(client, table.tableName);
+                const alters = generateAlterStatements(table.tableName, table.columns, existingColumns);
+                for (const alterSQL of alters) {
+                  await client.query(alterSQL);
+                  if (!alterStatements.includes(alterSQL)) {
+                    alterStatements.push(alterSQL);
+                  }
+                }
+              }
+            }
 
             // Retry the migration SQL
             await client.query(processedSQL);
           } else {
-            throw sqlError; // Sequence not found in master, re-throw original error
+            throw sqlError; // No sequences created, re-throw original error
           }
         } else {
           throw sqlError; // Not a function/sequence error or no master client, re-throw
