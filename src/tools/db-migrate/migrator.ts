@@ -350,14 +350,91 @@ function quoteReservedKeywords(content: string, reservedKeywords: Set<string>): 
 
   for (const keyword of reservedKeywords) {
     // Pattern: tab/spaces + unquoted keyword + space + column type
+    // The type must be followed by word boundary (space, paren, or end) to avoid
+    // matching prefixes like "timestamp" in "CURRENT_TIMESTAMP"
     const pattern = new RegExp(
-      `(^|[\\t ])${keyword}(\\s+(?:int|varchar|character|text|bool|float|numeric|serial|bigint|smallint|timestamp|date|time|uuid|json|int2|int4|int8)[^,)\\n]*)`,
+      `(^|[\\t ])${keyword}(\\s+(?:int|varchar|character|text|bool|float|numeric|serial|bigint|smallint|timestamptz|timestamp|date|time|uuid|json|int2|int4|int8)(?:\\s|\\(|,|$)[^,)\\n]*)`,
       'gim'
     );
     processed = processed.replace(pattern, `$1"${keyword}"$2`);
   }
 
   return processed;
+}
+
+/**
+ * Extracted foreign key constraint for deferred execution
+ */
+interface ExtractedForeignKey {
+  tableName: string;
+  constraintName: string;
+  constraintDef: string;
+}
+
+/**
+ * Extract FOREIGN KEY constraints from CREATE TABLE statements
+ * Returns modified SQL without FK constraints and array of FK constraints to add later
+ */
+function extractForeignKeys(sql: string): { sql: string; foreignKeys: ExtractedForeignKey[] } {
+  const foreignKeys: ExtractedForeignKey[] = [];
+
+  // Match CREATE TABLE statements and extract foreign keys
+  const processed = sql.replace(
+    /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\S+)\s*\(([\s\S]*?)\);/gi,
+    (_match, tableName, columnsBlock) => {
+      let modifiedColumns = columnsBlock;
+
+      // Extract CONSTRAINT ... FOREIGN KEY constraints
+      // Pattern matches: CONSTRAINT name FOREIGN KEY (cols) REFERENCES table(cols) [options]
+      const fkRegex = /,?\s*CONSTRAINT\s+(\S+)\s+FOREIGN\s+KEY\s*\([^)]+\)\s*REFERENCES\s+\S+\s*\([^)]+\)(?:\s+(?:ON\s+(?:DELETE|UPDATE)\s+(?:CASCADE|SET\s+NULL|SET\s+DEFAULT|RESTRICT|NO\s+ACTION)|DEFERRABLE|NOT\s+DEFERRABLE|INITIALLY\s+(?:DEFERRED|IMMEDIATE)))*\s*/gi;
+
+      let fkMatch;
+      while ((fkMatch = fkRegex.exec(columnsBlock)) !== null) {
+        const constraintName = fkMatch[1];
+        const fullConstraint = fkMatch[0].replace(/^,?\s*/, '').trim();
+        foreignKeys.push({
+          tableName,
+          constraintName,
+          constraintDef: fullConstraint,
+        });
+      }
+
+      // Remove FK constraints from CREATE TABLE
+      modifiedColumns = modifiedColumns.replace(fkRegex, '');
+
+      // Clean up multiple commas in a row (e.g., when FK was in the middle)
+      modifiedColumns = modifiedColumns.replace(/,\s*,/g, ',');
+
+      // Clean up trailing commas and whitespace before closing paren
+      modifiedColumns = modifiedColumns.replace(/,\s*$/, '');
+
+      // Clean up multiple newlines
+      modifiedColumns = modifiedColumns.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+      return `CREATE TABLE ${tableName} (${modifiedColumns});`;
+    }
+  );
+
+  return { sql: processed, foreignKeys };
+}
+
+/**
+ * Generate ALTER TABLE ADD CONSTRAINT statements for foreign keys
+ */
+function generateForeignKeyStatements(foreignKeys: ExtractedForeignKey[]): string {
+  return foreignKeys
+    .map((fk) => {
+      // Check if constraint already exists before adding
+      return `DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = '${fk.constraintName}'
+  ) THEN
+    ALTER TABLE ${fk.tableName} ADD ${fk.constraintDef};
+  END IF;
+END $$;`;
+    })
+    .join('\n\n');
 }
 
 /**
@@ -612,12 +689,24 @@ async function applyMigration(
       }
     }
 
-    // Preprocess SQL to add IF NOT EXISTS/IF EXISTS clauses
-    const processedSQL = preprocessSQL(content, reservedKeywords);
+    // Extract foreign keys for deferred execution (two-phase approach)
+    // This prevents "relation does not exist" errors due to table order
+    const { sql: sqlWithoutForeignKeys, foreignKeys } = extractForeignKeys(content);
 
-    // Execute main migration SQL
+    // Preprocess SQL to add IF NOT EXISTS/IF EXISTS clauses
+    const processedSQL = preprocessSQL(sqlWithoutForeignKeys, reservedKeywords);
+
+    // Generate foreign key statements for second phase
+    const foreignKeySQL = generateForeignKeyStatements(foreignKeys);
+
+    // Execute main migration SQL (without foreign keys)
     try {
       await client.query(processedSQL);
+
+      // Second phase: Add foreign key constraints
+      if (foreignKeySQL) {
+        await client.query(foreignKeySQL);
+      }
     } catch (sqlError) {
       const errorMessage = (sqlError as Error).message;
 
@@ -675,6 +764,11 @@ async function applyMigration(
 
           // Retry the migration SQL
           await client.query(processedSQL);
+
+          // Second phase: Add foreign key constraints
+          if (foreignKeySQL) {
+            await client.query(foreignKeySQL);
+          }
         } else {
           throw sqlError; // No functions created, re-throw original error
         }
@@ -737,6 +831,11 @@ async function applyMigration(
 
             // Retry the migration SQL
             await client.query(processedSQL);
+
+            // Second phase: Add foreign key constraints
+            if (foreignKeySQL) {
+              await client.query(foreignKeySQL);
+            }
           } else {
             throw sqlError; // No sequences created, re-throw original error
           }

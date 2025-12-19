@@ -23,7 +23,7 @@ export class MigrationRepository {
       LEFT JOIN pg_stat_user_tables s ON s.relname = t.table_name
       WHERE t.table_schema = 'public'
         AND t.table_type = 'BASE TABLE'
-        AND t.table_name NOT IN ('_migrations', 'Session', 'Session_log')
+        AND t.table_name NOT IN ('_migrations')
       ORDER BY t.table_name`
     );
     return result.rows.map((row) => ({
